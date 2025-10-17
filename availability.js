@@ -107,12 +107,7 @@ function renderCalendar() {
         html += `
             <div class="${classes}"
                  data-date="${dateStr}"
-                 onmousedown="startDragSelection('${dateStr}')"
-                 onmouseenter="continueDragSelection('${dateStr}')"
-                 onmouseup="endDragSelection()"
-                 ontouchstart="handleTouchStart(event, '${dateStr}')"
-                 ontouchmove="handleTouchMove(event)"
-                 ontouchend="endDragSelection()">
+                 onclick="toggleAvailability('${dateStr}')">
                 <div class="date-number">${day}</div>
                 ${isPBS ? '<div class="pbs-indicator">PBS</div>' : ''}
                 ${isAvailable ? '<div class="status-icon">✓</div>' : ''}
@@ -132,64 +127,7 @@ function formatDate(year, month, day) {
     return `${year}-${monthStr}-${dayStr}`;
 }
 
-// Start drag selection
-function startDragSelection(dateStr) {
-    isMouseDown = true;
-
-    // Determine drag mode based on current state
-    if (availabilityData[dateStr] === true) {
-        dragMode = 'clear'; // Clear if already available
-    } else {
-        dragMode = 'available'; // Mark as available
-    }
-
-    applyDragToDate(dateStr);
-}
-
-// Continue drag selection
-function continueDragSelection(dateStr) {
-    if (isMouseDown) {
-        applyDragToDate(dateStr);
-    }
-}
-
-// End drag selection
-function endDragSelection() {
-    isMouseDown = false;
-    dragMode = null;
-}
-
-// Apply drag mode to a date
-function applyDragToDate(dateStr) {
-    if (dragMode === 'available') {
-        availabilityData[dateStr] = true;
-    } else if (dragMode === 'clear') {
-        delete availabilityData[dateStr];
-    }
-
-    renderCalendar();
-}
-
-// Handle touch start for mobile
-function handleTouchStart(event, dateStr) {
-    event.preventDefault();
-    startDragSelection(dateStr);
-}
-
-// Handle touch move for mobile
-function handleTouchMove(event) {
-    if (!isMouseDown) return;
-
-    event.preventDefault();
-    const touch = event.touches[0];
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-
-    if (element && element.dataset.date) {
-        continueDragSelection(element.dataset.date);
-    }
-}
-
-// Single click/tap to toggle (fallback)
+// Toggle availability for a specific date
 function toggleAvailability(dateStr) {
     if (availabilityData[dateStr] === true) {
         delete availabilityData[dateStr];
@@ -256,15 +194,6 @@ function loadSavedAvailability() {
 function attachEventListeners() {
     document.getElementById('prevMonth').addEventListener('click', previousMonth);
     document.getElementById('nextMonth').addEventListener('click', nextMonth);
-
-    // Global mouse up to end drag selection
-    document.addEventListener('mouseup', endDragSelection);
-    document.addEventListener('touchend', endDragSelection);
-
-    // Prevent text selection while dragging
-    document.addEventListener('selectstart', (e) => {
-        if (isMouseDown) e.preventDefault();
-    });
 }
 
 // Navigate to previous month

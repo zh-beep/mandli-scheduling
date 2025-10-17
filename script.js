@@ -319,10 +319,6 @@ function openEditModal(date, dutyTypeId, currentAssignment) {
         personSelect.appendChild(option);
     });
 
-    // Clear add person fields
-    document.getElementById('newPersonName').value = '';
-    document.getElementById('newPersonEmail').value = '';
-
     // Show modal
     modal.classList.remove('hidden');
 }
@@ -356,35 +352,6 @@ function saveAssignment() {
     }
 }
 
-function addNewPerson() {
-    const name = document.getElementById('newPersonName').value.trim();
-    const email = document.getElementById('newPersonEmail').value.trim();
-
-    if (!name || !email) {
-        return;
-    }
-
-    if (peopleDatabase[name]) {
-        return;
-    }
-
-    // Add to database with a generated color
-    const colors = [
-        { bg: '#E8F5E9', text: '#2E7D32' },
-        { bg: '#FFF3E0', text: '#E65100' },
-        { bg: '#F3E5F5', text: '#6A1B9A' },
-        { bg: '#E1F5FE', text: '#01579B' }
-    ];
-    const randomColor = colors[Object.keys(peopleDatabase).length % colors.length];
-
-    peopleDatabase[name] = { email, color: randomColor };
-
-    // Refresh the person select dropdown
-    openEditModal(currentEditingCell.date, currentEditingCell.dutyTypeId, currentEditingCell.currentAssignment);
-
-    // Select the newly added person
-    document.getElementById('personSelect').value = name;
-}
 
 // Attach click handlers to cells
 function attachCellClickHandlers() {
@@ -430,7 +397,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeModal').addEventListener('click', closeEditModal);
     document.getElementById('cancelBtn').addEventListener('click', closeEditModal);
     document.getElementById('saveBtn').addEventListener('click', saveAssignment);
-    document.getElementById('addPersonBtn').addEventListener('click', addNewPerson);
 
     // Close modal on background click
     document.getElementById('editModal').addEventListener('click', (e) => {
