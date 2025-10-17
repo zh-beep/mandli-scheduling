@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Mandli Scheduling</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="app-title">Mandli Scheduling System</h1>
+                    <p class="app-subtitle">Admin Settings</p>
+                </div>
+                <div class="admin-indicator">
+                    <span class="admin-icon">👤</span>
+                    <span class="admin-text">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="index.html" class="nav-tab">📅 Schedule</a>
+            <a href="settings.html" class="nav-tab active">⚙️ Settings</a>
+            <a href="availability.html" class="nav-tab">✋ My Availability</a>
+        </div>
+
+        <!-- Settings Content -->
+        <div class="settings-container">
+            <!-- Notification Settings -->
+            <div class="settings-section">
+                <h2 class="section-title">📧 Notification Settings</h2>
+                <div class="settings-card">
+                    <div class="form-group">
+                        <label>Send availability request:</label>
+                        <select id="notificationTiming" class="form-control">
+                            <option value="7">1 week before month starts</option>
+                            <option value="14">2 weeks before month starts</option>
+                            <option value="21">3 weeks before month starts</option>
+                            <option value="30">1 month before month starts</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Reminder frequency:</label>
+                        <select id="reminderFrequency" class="form-control">
+                            <option value="none">No reminders</option>
+                            <option value="daily">Daily until submitted</option>
+                            <option value="3days">Every 3 days</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveNotificationSettings()">Save Notification Settings</button>
+                </div>
+            </div>
+
+            <!-- People Management -->
+            <div class="settings-section">
+                <h2 class="section-title">👥 Manage People</h2>
+                <div class="settings-card">
+                    <div class="people-list" id="peopleList">
+                        <!-- People will be dynamically inserted here -->
+                    </div>
+
+                    <div class="add-person-section">
+                        <h3>Add New Person</h3>
+                        <div class="form-group">
+                            <label>Name (initials):</label>
+                            <input type="text" id="newPersonNameSettings" class="form-control" placeholder="e.g., AB MS">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address:</label>
+                            <input type="email" id="newPersonEmailSettings" class="form-control" placeholder="email@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number (optional):</label>
+                            <input type="tel" id="newPersonPhone" class="form-control" placeholder="+1 (555) 123-4567">
+                        </div>
+                        <button class="btn btn-primary" onclick="addPersonFromSettings()">Add Person</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export/Import Settings -->
+            <div class="settings-section">
+                <h2 class="section-title">💾 Data Management</h2>
+                <div class="settings-card">
+                    <div class="data-actions">
+                        <button class="btn btn-primary" onclick="generateAvailabilityLinks()">🔗 Generate Availability Links</button>
+                        <button class="btn btn-secondary" onclick="exportPeopleData()">📥 Export People List (CSV)</button>
+                        <button class="btn btn-secondary" onclick="exportScheduleData()">📥 Export All Schedules (CSV)</button>
+                        <button class="btn btn-secondary" onclick="sendTestNotification()">✉️ Send Test Notification</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="test-data.js"></script>
+    <script src="script.js"></script>
+    <script src="settings.js"></script>
+</body>
+</html>

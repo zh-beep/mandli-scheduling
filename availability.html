@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Availability - Mandli Scheduling</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="app-title">Mandli Scheduling System</h1>
+                    <p class="app-subtitle">Mark Your Availability</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="index.html" class="nav-tab">📅 Schedule</a>
+            <a href="settings.html" class="nav-tab">⚙️ Settings</a>
+            <a href="availability.html" class="nav-tab active">✋ My Availability</a>
+        </div>
+
+        <!-- Availability Form -->
+        <div class="availability-container">
+            <!-- User Info Section -->
+            <div class="availability-header">
+                <div class="user-info">
+                    <h2 id="userName">Welcome, <span id="userNameDisplay">Mandli</span></h2>
+                    <p class="availability-subtitle">Select the dates you're available for <span id="monthDisplay">October 2025</span></p>
+                </div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color available"></div>
+                        <span>Available</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color unavailable"></div>
+                        <span>Unavailable</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color pbs-day"></div>
+                        <span>PBS Day</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Month Navigation -->
+            <div class="month-navigation">
+                <button id="prevMonth" class="nav-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M15 18l-6-6 6-6"/>
+                    </svg>
+                </button>
+                <h3 id="currentMonth" class="current-month">October 2025</h3>
+                <button id="nextMonth" class="nav-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 18l6-6-6-6"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Calendar Grid -->
+            <div class="availability-calendar" id="availabilityCalendar">
+                <!-- Calendar will be dynamically inserted here -->
+            </div>
+
+            <!-- Instructions -->
+            <div class="availability-instructions">
+                <p>💡 <strong>Tip:</strong> Click and drag across multiple dates to quickly mark availability. Green = Available</p>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="availability-actions">
+                <button class="btn btn-secondary" onclick="clearAllDates()">Clear All</button>
+                <button class="btn btn-primary" onclick="submitAvailability()">Submit Availability</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="test-data.js"></script>
+    <script src="availability.js"></script>
+</body>
+</html>

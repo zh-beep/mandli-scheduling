@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mandli Scheduling - Monthly Duty Roster</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="app-title">Mandli Scheduling System</h1>
+                    <p class="app-subtitle">Monthly Duty Assignments</p>
+                </div>
+                <div class="admin-indicator">
+                    <span class="admin-icon">👤</span>
+                    <span class="admin-text">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="index.html" class="nav-tab active">📅 Schedule</a>
+            <a href="settings.html" class="nav-tab">⚙️ Settings</a>
+            <a href="availability.html" class="nav-tab">✋ My Availability</a>
+        </div>
+
+        <!-- Week Navigation -->
+        <div class="week-navigation">
+            <button id="prevWeek" class="nav-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M15 18l-6-6 6-6"/>
+                </svg>
+            </button>
+            <h2 id="currentWeek" class="current-week">Week of Sep 23 - 29, 2025</h2>
+            <button id="nextWeek" class="nav-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18l6-6-6-6"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Stats Overview -->
+        <div class="stats-overview">
+            <div class="stat-card">
+                <div class="stat-value" id="totalDuties">0</div>
+                <div class="stat-label">Total Duties</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="assignedDuties">0</div>
+                <div class="stat-label">Assigned</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeMandlis">0</div>
+                <div class="stat-label">Active Mandlis</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="coverageRate">0%</div>
+                <div class="stat-label">Coverage</div>
+            </div>
+        </div>
+
+        <!-- Main Weekly Schedule Grid -->
+        <div class="schedule-container">
+            <div class="weekly-grid" id="weekGrid">
+                <!-- Weekly grid will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Admin Actions -->
+        <div class="admin-actions">
+            <button class="btn btn-secondary" id="exportBtn">Export Schedule</button>
+            <button class="btn btn-primary" id="approveBtn">Approve & Send Invites</button>
+        </div>
+    </div>
+
+    <!-- Edit Assignment Modal -->
+    <div id="editModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Edit Assignment</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <p><strong>Date:</strong> <span id="modalDate"></span></p>
+                    <p><strong>Duty Type:</strong> <span id="modalDutyType"></span></p>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Person:</label>
+                    <select id="personSelect" class="form-control">
+                        <option value="">-- Unassigned --</option>
+                    </select>
+                </div>
+
+                <div class="form-divider">OR</div>
+
+                <div class="form-group">
+                    <label>Add New Person:</label>
+                    <input type="text" id="newPersonName" class="form-control" placeholder="Name (e.g., AB MS)">
+                </div>
+                <div class="form-group">
+                    <label>Email Address:</label>
+                    <input type="email" id="newPersonEmail" class="form-control" placeholder="email@example.com">
+                </div>
+                <button class="btn btn-secondary" id="addPersonBtn">Add Person</button>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save Assignment</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="test-data.js?v=3"></script>
+    <script src="script.js?v=3"></script>
+</body>
+</html>
