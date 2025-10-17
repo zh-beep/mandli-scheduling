@@ -884,7 +884,7 @@ body {
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
+    gap: 5px;
 }
 
 .calendar-day-header {
@@ -1082,23 +1082,38 @@ body {
 }
 
 @media (max-width: 480px) {
+    .calendar-grid {
+        gap: 2px;
+    }
+
+    .calendar-day-header {
+        padding: 5px 2px;
+        font-size: 0.7rem;
+    }
+
     .calendar-day {
-        min-height: 50px;
-        padding: 3px;
+        min-height: 45px;
+        padding: 2px;
+        aspect-ratio: 1;
     }
 
     .date-number {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
     }
 
     .pbs-indicator {
-        font-size: 0.6rem;
-        padding: 1px 4px;
+        font-size: 0.5rem;
+        padding: 0px 2px;
     }
 
     .status-icon {
-        font-size: 1rem;
-        bottom: 3px;
-        right: 3px;
+        font-size: 0.9rem;
+        position: static;
+        margin-top: 2px;
+    }
+
+    .availability-calendar {
+        padding: 15px 10px;
     }
 }
