@@ -1082,38 +1082,102 @@ body {
 }
 
 @media (max-width: 480px) {
-    .calendar-grid {
-        gap: 2px;
-    }
-
-    .calendar-day-header {
-        padding: 5px 2px;
-        font-size: 0.7rem;
-    }
-
-    .calendar-day {
-        min-height: 45px;
-        padding: 2px;
-        aspect-ratio: 1;
-    }
-
-    .date-number {
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .pbs-indicator {
-        font-size: 0.5rem;
-        padding: 0px 2px;
-    }
-
-    .status-icon {
-        font-size: 0.9rem;
-        position: static;
-        margin-top: 2px;
+    .availability-container {
+        padding: 10px 0;
     }
 
     .availability-calendar {
+        padding: 10px 5px;
+        border-radius: 10px;
+        margin: 0 5px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(38px, 1fr));
+        gap: 1px;
+        min-width: 266px;
+        max-width: 100%;
+    }
+
+    .calendar-day-header {
+        padding: 6px 0;
+        font-size: 0.65rem;
+        font-weight: 600;
+        min-width: 38px;
+    }
+
+    .calendar-day {
+        min-height: 38px;
+        max-height: 45px;
+        min-width: 38px;
+        padding: 2px;
+        aspect-ratio: unset;
+        border-radius: 8px;
+        border-width: 1px;
+    }
+
+    .calendar-day.empty {
+        min-height: 38px;
+    }
+
+    .calendar-day.pbs-day {
+        border-width: 2px;
+    }
+
+    .date-number {
+        font-size: 0.7rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 2px;
+    }
+
+    .pbs-indicator {
+        font-size: 0.45rem;
+        padding: 0px 2px;
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        line-height: 1;
+        border-radius: 3px;
+    }
+
+    .status-icon {
+        font-size: 0.8rem;
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        line-height: 1;
+    }
+
+    .month-navigation {
         padding: 15px 10px;
+    }
+
+    .month-navigation h3 {
+        font-size: 1.1rem;
+    }
+
+    .nav-btn {
+        padding: 6px;
+        width: 32px;
+        height: 32px;
+    }
+
+    .legend {
+        gap: 6px;
+        font-size: 0.7rem;
+    }
+
+    .legend-color {
+        width: 14px;
+        height: 14px;
+    }
+
+    .availability-instructions {
+        padding: 15px;
+        font-size: 0.85rem;
     }
 }

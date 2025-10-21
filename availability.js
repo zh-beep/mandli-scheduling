@@ -73,8 +73,11 @@ function renderCalendar() {
     // Build calendar HTML
     let html = '<div class="calendar-grid">';
 
-    // Day headers
-    const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // Day headers - use single letters on mobile
+    const isMobile = window.innerWidth <= 480;
+    const dayHeaders = isMobile
+        ? ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+        : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     dayHeaders.forEach(day => {
         html += `<div class="calendar-day-header">${day}</div>`;
     });
@@ -264,6 +267,15 @@ function attachEventListeners() {
     // Prevent text selection while dragging
     document.addEventListener('selectstart', (e) => {
         if (isMouseDown) e.preventDefault();
+    });
+
+    // Redraw calendar on window resize for responsive day headers
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            renderCalendar();
+        }, 250);
     });
 }
 
