@@ -40,20 +40,13 @@ console.log('Current week key:', currentWeekKey);
 console.log('Available week keys:', Object.keys(weeklyScheduleData));
 console.log('Week data found:', weeklyScheduleData[currentWeekKey] ? 'YES' : 'NO');
 
-// Get start of week (Tuesday) for given date
+// Get start of week (Sunday) for given date
 function getStartOfWeek(date) {
     const d = new Date(date);
     const day = d.getDay(); // 0 = Sunday, 1 = Monday, 2 = Tuesday, etc.
 
-    // Calculate days to subtract to get to Tuesday
-    let diff;
-    if (day === 0) { // Sunday
-        diff = 5; // Go back 5 days to Tuesday
-    } else if (day === 1) { // Monday
-        diff = 6; // Go back 6 days to last Tuesday
-    } else { // Tuesday through Saturday
-        diff = day - 2; // Go back to Tuesday
-    }
+    // Calculate days to subtract to get to Sunday
+    const diff = day; // Simply go back to Sunday (day 0)
 
     d.setDate(d.getDate() - diff);
     d.setHours(0, 0, 0, 0);

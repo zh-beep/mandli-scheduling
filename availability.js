@@ -8,11 +8,7 @@ let currentUserId = null; // Unique ID from URL
 let isMouseDown = false;
 let dragMode = null; // 'available' or 'unavailable'
 
-// PBS Days (placeholder - should match actual PBS schedule)
-const pbsDays = {
-    '2025-10-19': true, // Example PBS day
-    '2025-10-26': true  // Example PBS day
-};
+// PBS Days removed - no longer needed
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -90,12 +86,10 @@ function renderCalendar() {
     // Days of month
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = formatDate(year, month, day);
-        const isPBS = pbsDays[dateStr] || false;
         const isAvailable = availabilityData[dateStr] === true;
         const isUnavailable = availabilityData[dateStr] === false;
 
         let classes = 'calendar-day selectable';
-        if (isPBS) classes += ' pbs-day';
         if (isAvailable) classes += ' available';
         if (isUnavailable) classes += ' unavailable';
 
@@ -117,7 +111,6 @@ function renderCalendar() {
                  ontouchmove="handleTouchMove(event)"
                  ontouchend="endDragSelection()">
                 <div class="date-number">${day}</div>
-                ${isPBS ? '<div class="pbs-indicator">PBS</div>' : ''}
                 ${isAvailable ? '<div class="status-icon">✓</div>' : ''}
                 ${isUnavailable ? '<div class="status-icon">✗</div>' : ''}
             </div>

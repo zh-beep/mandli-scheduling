@@ -84,7 +84,11 @@ app.get('/', (req, res) => {
   });
 });
 
-// Serve calendar auth page
+// Serve calendar auth pages
+app.get('/linkcal', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../linkcal.html'));
+});
+
 app.get('/calendar-auth.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../../calendar-auth.html'));
 });

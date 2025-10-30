@@ -6,6 +6,75 @@ const calendarService = require('../services/calendar');
 const router = express.Router();
 
 /**
+ * POST /api/calendar/connect-by-email
+ * Start OAuth flow using email address
+ * Public endpoint - anyone can connect their calendar
+ */
+router.post('/connect-by-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Email is required'
+      });
+    }
+
+    // Look up user by email
+    let { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, full_name, email')
+      .eq('email', email)
+      .single();
+
+    // If user doesn't exist, create them
+    if (error || !user) {
+      console.log(`User not found for ${email}, creating new user...`);
+
+      const { data: newUser, error: createError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          email: email,
+          full_name: email.split('@')[0], // Use email prefix as default name
+          cell_phone: null
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating user:', createError);
+        return res.status(500).json({
+          error: 'Server error',
+          message: 'Failed to create user account'
+        });
+      }
+
+      user = newUser;
+    }
+
+    // Generate OAuth URL
+    const authUrl = calendarService.getAuthUrl(user.id);
+
+    res.json({
+      authUrl,
+      message: 'Redirecting to Google Calendar authorization',
+      user: {
+        id: user.id,
+        email: user.email
+      }
+    });
+
+  } catch (error) {
+    console.error('Error initiating OAuth:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'Failed to initiate calendar connection'
+    });
+  }
+});
+
+/**
  * POST /api/calendar/connect/:userId
  * Start OAuth flow for a user
  * Public endpoint - users can connect their own calendar

@@ -1,37 +1,77 @@
-// Load people from script.js peopleDatabase
+// Settings state
 let settings = {
     notificationTiming: 7, // days before month
     reminderFrequency: 'none'
 };
 
-// Render people list
-function renderPeopleList() {
+const API_BASE_URL = 'http://localhost:3001/api';
+let usersCache = []; // Cache users from Supabase
+
+// Helper to get auth token
+function getAuthToken() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; mandli_token=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// Load and render people list from Supabase
+async function renderPeopleList() {
     const peopleList = document.getElementById('peopleList');
-    const sortedPeople = Object.keys(peopleDatabase).sort();
+    peopleList.innerHTML = '<div style="padding: 20px; text-align: center;">Loading users...</div>';
 
-    let html = '<div class="people-table">';
-    html += '<div class="people-header">';
-    html += '<div class="col-name">Name</div>';
-    html += '<div class="col-email">Email</div>';
-    html += '<div class="col-phone">Phone</div>';
-    html += '<div class="col-actions">Actions</div>';
-    html += '</div>';
+    try {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
 
-    sortedPeople.forEach(person => {
-        const data = peopleDatabase[person];
-        html += '<div class="people-row">';
-        html += `<div class="col-name"><strong>${person}</strong></div>`;
-        html += `<div class="col-email">${data.email}</div>`;
-        html += `<div class="col-phone">${data.phone || '-'}</div>`;
-        html += `<div class="col-actions">
-            <button class="btn-icon" onclick="editPerson('${person}')" title="Edit">✏️</button>
-            <button class="btn-icon" onclick="deletePerson('${person}')" title="Delete">🗑️</button>
-        </div>`;
+        if (!response.ok) {
+            throw new Error('Failed to fetch users');
+        }
+
+        const data = await response.json();
+        usersCache = data.users;
+
+        // Filter to only show active users and sort by name
+        const sortedUsers = usersCache
+            .filter(user => user.is_active)
+            .sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+        let html = '<div class="people-table">';
+        html += '<div class="people-header">';
+        html += '<div class="col-name">Name</div>';
+        html += '<div class="col-email">Email</div>';
+        html += '<div class="col-phone">Phone</div>';
+        html += '<div class="col-gender">Gender</div>';
+        html += '<div class="col-actions">Actions</div>';
         html += '</div>';
-    });
 
-    html += '</div>';
-    peopleList.innerHTML = html;
+        sortedUsers.forEach(user => {
+            const statusBadge = user.is_active ?
+                '<span style="color: green;">●</span>' :
+                '<span style="color: red;">●</span>';
+
+            html += '<div class="people-row">';
+            html += `<div class="col-name">${statusBadge} <strong>${user.full_name}</strong></div>`;
+            html += `<div class="col-email">${user.email}</div>`;
+            html += `<div class="col-phone">${user.cell_phone || '-'}</div>`;
+            html += `<div class="col-gender">${user.gender}</div>`;
+            html += `<div class="col-actions">
+                <button class="btn-icon" onclick="generateUserLink('${user.id}')" title="Get Link">🔗</button>
+                <button class="btn-icon" onclick="toggleUserActive('${user.id}', ${user.is_active})" title="${user.is_active ? 'Deactivate' : 'Activate'}">${user.is_active ? '🚫' : '✅'}</button>
+            </div>`;
+            html += '</div>';
+        });
+
+        html += '</div>';
+        peopleList.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error loading users:', error);
+        peopleList.innerHTML = '<div style="padding: 20px; color: red;">Error loading users. Please refresh the page.</div>';
+    }
 }
 
 // Save notification settings
@@ -45,8 +85,81 @@ function saveNotificationSettings() {
     alert('✅ Notification settings saved!');
 }
 
+// Generate unique link for a user
+async function generateUserLink(userId) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/link`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to generate link');
+        }
+
+        const data = await response.json();
+
+        // Show link in a modal - truncate to last 20 characters for display
+        const linkText = data.link;
+        const shortLink = '...' + linkText.slice(-20);
+
+        // Use modal with copy button
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:white;padding:30px;border-radius:15px;max-width:500px;width:90%;">
+                <h3 style="margin-bottom:15px;">📧 Unique Link for ${data.user.name}</h3>
+                <p style="margin-bottom:15px;color:#666;">Link: ${shortLink}</p>
+                <input type="text" id="fullLinkInput" value="${linkText}" style="width:100%;padding:10px;border:2px solid #E0E0E0;border-radius:8px;font-family:monospace;font-size:12px;margin-bottom:15px;" readonly>
+                <div style="display:flex;gap:10px;">
+                    <button onclick="navigator.clipboard.writeText('${linkText}').then(() => alert('✅ Link copied!')); this.closest('div').parentElement.parentElement.remove();" style="flex:1;padding:12px;background:#4A90E2;color:white;border:none;border-radius:10px;cursor:pointer;">Copy Link</button>
+                    <button onclick="this.closest('div').parentElement.parentElement.remove()" style="padding:12px 20px;background:#ccc;color:#333;border:none;border-radius:10px;cursor:pointer;">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+    } catch (error) {
+        console.error('Error generating link:', error);
+        alert('Failed to generate link. Please try again.');
+    }
+}
+
+// Toggle user active/inactive status
+async function toggleUserActive(userId, currentStatus) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this user?`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                is_active: !currentStatus
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to update user');
+        }
+
+        alert(`✅ User ${action}d successfully!`);
+        renderPeopleList(); // Reload list
+
+    } catch (error) {
+        console.error('Error updating user:', error);
+        alert('Failed to update user. Please try again.');
+    }
+}
+
 // Add person from settings
-function addPersonFromSettings() {
+async function addPersonFromSettings() {
     const name = document.getElementById('newPersonNameSettings').value.trim();
     const email = document.getElementById('newPersonEmailSettings').value.trim();
     const phone = document.getElementById('newPersonPhone').value.trim();
@@ -56,37 +169,52 @@ function addPersonFromSettings() {
         return;
     }
 
-    if (peopleDatabase[name]) {
-        alert('This person already exists. Use the edit button to update their information.');
+    // Get gender from a new dropdown (you'll need to add this to the HTML)
+    const gender = prompt('Enter gender (gents/ladies):', 'gents');
+    if (!gender || !['gents', 'ladies'].includes(gender)) {
+        alert('Please enter either "gents" or "ladies"');
         return;
     }
 
-    // Add to database with a generated color
-    const colors = [
-        { bg: '#E8F5E9', text: '#2E7D32' },
-        { bg: '#FFF3E0', text: '#E65100' },
-        { bg: '#F3E5F5', text: '#6A1B9A' },
-        { bg: '#E1F5FE', text: '#01579B' },
-        { bg: '#FFF9C4', text: '#F57F17' },
-        { bg: '#FFECB3', text: '#E65100' }
-    ];
-    const randomColor = colors[Object.keys(peopleDatabase).length % colors.length];
+    try {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                full_name: name,
+                email: email,
+                cell_phone: phone || null,
+                gender: gender
+            })
+        });
 
-    peopleDatabase[name] = {
-        email,
-        phone: phone || null,
-        color: randomColor
-    };
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to create user');
+        }
 
-    // Clear form
-    document.getElementById('newPersonNameSettings').value = '';
-    document.getElementById('newPersonEmailSettings').value = '';
-    document.getElementById('newPersonPhone').value = '';
+        const data = await response.json();
 
-    // Re-render list
-    renderPeopleList();
+        // Clear form
+        document.getElementById('newPersonNameSettings').value = '';
+        document.getElementById('newPersonEmailSettings').value = '';
+        document.getElementById('newPersonPhone').value = '';
 
-    alert(`✅ ${name} has been added successfully!`);
+        // Re-render list
+        await renderPeopleList();
+
+        // Offer to generate link
+        if (confirm(`✅ ${name} has been added successfully!\n\nWould you like to generate their unique availability link now?`)) {
+            await generateUserLink(data.user.id);
+        }
+
+    } catch (error) {
+        console.error('Error adding user:', error);
+        alert(`Failed to add user: ${error.message}`);
+    }
 }
 
 // Edit person
