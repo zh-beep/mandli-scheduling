@@ -104,7 +104,10 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'http://localhost:3001/api';
+        // Automatically detect API URL based on environment
+        const API_BASE_URL = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('mandli')
+            ? 'https://mandli-production.up.railway.app/api'
+            : 'http://localhost:3001/api';
 
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
