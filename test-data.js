@@ -457,6 +457,32 @@ const weeklyScheduleData = {
                 }
             }
         ]
+    },
+    // Week starting Oct 21, 2025
+    '2025-10-21': {
+        weekLabel: 'Week of Oct 21 - 27, 2025',
+        days: [
+            { date: '2025-10-21', dayName: 'Tuesday', isPBS: false, assignments: { ep_g1: 'OF MS', ep_l1: 'OF MM', ep_g2: 'OF KS', ep_l2: 'OF KM', lp_g1: 'RJ MS', lp_l1: 'RJ MM', lp_g2: 'RJ KS', lp_l2: 'RJ KM' } },
+            { date: '2025-10-22', dayName: 'Wednesday', isPBS: false, assignments: { ep_g1: 'CR MS', ep_l1: 'BK MM', ep_g2: 'BK KS', ep_l2: 'BK KM', lp_g1: null, lp_l1: 'CR MM', lp_g2: null, lp_l2: 'HPB MM' } },
+            { date: '2025-10-23', dayName: 'Thursday', isPBS: false, assignments: { ep_g1: 'OF MS', ep_l1: 'OF MM', ep_g2: 'OF KS', ep_l2: 'OF KM', lp_g1: 'RJ MS', lp_l1: 'RJ MM', lp_g2: 'RJ KS', lp_l2: 'RJ KM' } },
+            { date: '2025-10-24', dayName: 'Friday', isPBS: false, assignments: { ep_g1: 'CR MS', ep_l1: 'BK MM', ep_g2: 'BK KS', ep_l2: 'BK KM', lp_g1: null, lp_l1: 'CR MM', lp_g2: null, lp_l2: 'HPB MM' } },
+            { date: '2025-10-25', dayName: 'Saturday', isPBS: false, assignments: { ep_g1: 'OF MS', ep_l1: 'OF MM', ep_g2: 'OF KS', ep_l2: 'OF KM', lp_g1: 'RJ MS', lp_l1: 'RJ MM', lp_g2: 'RJ KS', lp_l2: 'RJ KM' } },
+            { date: '2025-10-26', dayName: 'Sunday', isPBS: false, assignments: { ep_g1: 'CR MS', ep_l1: 'BK MM', ep_g2: 'BK KS', ep_l2: 'BK KM', lp_g1: null, lp_l1: 'CR MM', lp_g2: null, lp_l2: 'HPB MM' } },
+            { date: '2025-10-27', dayName: 'Monday', isPBS: false, assignments: { ep_g1: 'OF MS', ep_l1: 'OF MM', ep_g2: 'OF KS', ep_l2: 'OF KM', lp_g1: 'RJ MS', lp_l1: 'RJ MM', lp_g2: 'RJ KS', lp_l2: 'RJ KM' } }
+        ]
+    },
+    // Week starting Oct 28, 2025 (CURRENT WEEK - EMPTY)
+    '2025-10-28': {
+        weekLabel: 'Week of Oct 28 - Nov 3, 2025',
+        days: [
+            { date: '2025-10-28', dayName: 'Tuesday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-10-29', dayName: 'Wednesday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-10-30', dayName: 'Thursday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-10-31', dayName: 'Friday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-11-01', dayName: 'Saturday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-11-02', dayName: 'Sunday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
+            { date: '2025-11-03', dayName: 'Monday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } }
+        ]
     }
 };
 

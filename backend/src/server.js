@@ -14,6 +14,11 @@ const calendarRoutes = require('./routes/calendar');
 // Create Express app
 const app = express();
 
+// Trust proxy for Railway/production deployment
+if (config.isProduction) {
+  app.set('trust proxy', 1);
+}
+
 // Security middleware
 app.use(helmet());
 

@@ -17,34 +17,43 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
-    let { start_date, end_date, week_start } = req.query;
+    let { week_start } = req.query;
 
-    // If week_start is provided, calculate the week range (Tuesday to Monday)
-    if (week_start) {
-      start_date = week_start;
-      const startDate = new Date(week_start + 'T00:00:00');
-      startDate.setDate(startDate.getDate() + 6); // Add 6 days for Monday
-      const year = startDate.getFullYear();
-      const month = String(startDate.getMonth() + 1).padStart(2, '0');
-      const day = String(startDate.getDate()).padStart(2, '0');
-      end_date = `${year}-${month}-${day}`;
-    }
-
-    if (!start_date || !end_date) {
+    if (!week_start) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Either week_start OR (start_date AND end_date) are required'
+        message: 'week_start is required (format: YYYY-MM-DD)'
       });
     }
 
+    // Parse week_start to get month and day range
+    const startDate = new Date(week_start + 'T00:00:00');
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6); // Tuesday to Monday (7 days)
+
+    const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+    const endMonth = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+
+    const startDay = startDate.getDate();
+    const endDay = endDate.getDate();
+
     // Get schedules using the schedule_details view
-    const { data: schedules, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from('schedule_details')
-      .select('*')
-      .gte('date', start_date)
-      .lte('date', end_date)
-      .order('date', { ascending: true })
-      .order('slot_number', { ascending: true});
+      .select('*');
+
+    // Handle cross-month weeks
+    if (startMonth === endMonth) {
+      query = query
+        .eq('month', startMonth)
+        .gte('day', startDay)
+        .lte('day', endDay);
+    } else {
+      // Week spans two months
+      query = query.or(`and(month.eq.${startMonth},day.gte.${startDay}),and(month.eq.${endMonth},day.lte.${endDay})`);
+    }
+
+    const { data: schedules, error } = await query.order('month').order('day');
 
     if (error) {
       console.error('Database error:', error);
@@ -58,35 +67,40 @@ router.get('/', async (req, res) => {
     // Group by date
     const dayMap = {};
     schedules.forEach(schedule => {
-      if (!dayMap[schedule.date]) {
-        dayMap[schedule.date] = {
-          date: schedule.date,
-          dayName: new Date(schedule.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long' }),
-          isPBS: schedule.is_pbs || false,
+      const dateKey = `${schedule.month}-${String(schedule.day).padStart(2, '0')}`;
+
+      if (!dayMap[dateKey]) {
+        const fullDate = new Date(`${schedule.month}-${String(schedule.day).padStart(2, '0')}T00:00:00`);
+        dayMap[dateKey] = {
+          date: dateKey,
+          dayName: fullDate.toLocaleDateString('en-US', { weekday: 'long' }),
+          isPBS: false,
           assignments: {}
         };
       }
 
-      // Map slot_number to duty type ID
-      const slotMap = {
-        1: 'ep_g1',
-        2: 'ep_l1',
-        3: 'ep_g2',
-        4: 'ep_l2',
-        5: 'lp_g1',
-        6: 'lp_l1',
-        7: 'lp_g2',
-        8: 'lp_l2'
+      // Map duty_type to frontend IDs
+      const dutyTypeMap = {
+        'early_paat_gents_1': 'ep_g1',
+        'early_paat_ladies_1': 'ep_l1',
+        'early_paat_gents_2': 'ep_g2',
+        'early_paat_ladies_2': 'ep_l2',
+        'late_paat_gents_1': 'lp_g1',
+        'late_paat_ladies_1': 'lp_l1',
+        'late_paat_gents_2': 'lp_g2',
+        'late_paat_ladies_2': 'lp_l2'
       };
 
-      const dutyTypeId = slotMap[schedule.slot_number];
-      dayMap[schedule.date].assignments[dutyTypeId] = schedule.name || null;
+      const dutyTypeId = dutyTypeMap[schedule.duty_type];
+      if (dutyTypeId) {
+        dayMap[dateKey].assignments[dutyTypeId] = schedule.full_name || null;
+      }
     });
 
     const days = Object.values(dayMap);
 
     res.json({
-      weekLabel: `Week of ${new Date(start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
+      weekLabel: `Week of ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
       days
     });
 
