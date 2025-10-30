@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const config = require('./config');
 
 // Import routes
@@ -77,9 +78,15 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       users: '/api/users',
       availability: '/api/availability',
-      schedules: '/api/schedules'
+      schedules: '/api/schedules',
+      calendar: '/api/calendar'
     }
   });
+});
+
+// Serve calendar auth page
+app.get('/calendar-auth.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../calendar-auth.html'));
 });
 
 // 404 handler

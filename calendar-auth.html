@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Your Calendar - Mandli Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+            border-radius: 8px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #555;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .auth-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .security-note {
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .google-logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="google-logo">📅</div>
+        <h1>Connect Your Google Calendar</h1>
+        <p class="subtitle">Get your duty schedule automatically added to your calendar</p>
+
+        <div class="info-box">
+            <h3>What you'll get:</h3>
+            <ul>
+                <li>Automatic calendar events for your assigned duties</li>
+                <li>Email and popup reminders before shifts</li>
+                <li>Seamless schedule synchronization</li>
+                <li>No manual entry needed</li>
+            </ul>
+        </div>
+
+        <button class="auth-button" onclick="startAuth()">
+            Connect Google Calendar
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Connecting to Google Calendar...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="security-note">
+            🔒 Secure OAuth 2.0 authentication. We only access your calendar to add events.
+            You can revoke access anytime from your Google Account settings.
+        </div>
+    </div>
+
+    <script>
+        // Get user ID from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId') || urlParams.get('user');
+
+        if (!userId) {
+            document.getElementById('error').textContent = 'Invalid link: Missing user ID. Please contact your administrator.';
+            document.getElementById('error').classList.add('active');
+            document.querySelector('.auth-button').disabled = true;
+        }
+
+        async function startAuth() {
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const button = document.querySelector('.auth-button');
+
+            // Show loading
+            loadingEl.classList.add('active');
+            errorEl.classList.remove('active');
+            button.disabled = true;
+
+            try {
+                // Call the API to get OAuth URL
+                const response = await fetch(`https://mandli-production.up.railway.app/api/calendar/connect/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.authUrl) {
+                    // Redirect to Google OAuth
+                    window.location.href = data.authUrl;
+                } else {
+                    throw new Error(data.message || 'Failed to generate authentication link');
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                errorEl.textContent = `Error: ${error.message}. Please try again or contact support.`;
+                errorEl.classList.add('active');
+                loadingEl.classList.remove('active');
+                button.disabled = false;
+            }
+        }
+
+        // Auto-show user info if available
+        window.addEventListener('DOMContentLoaded', () => {
+            if (userId) {
+                console.log('User ID:', userId);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -8,9 +8,9 @@ const router = express.Router();
 /**
  * POST /api/calendar/connect/:userId
  * Start OAuth flow for a user
- * Admin initiates this for a user
+ * Public endpoint - users can connect their own calendar
  */
-router.post('/connect/:userId', authenticateAdmin, async (req, res) => {
+router.post('/connect/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -102,14 +102,93 @@ router.get('/callback', async (req, res) => {
 
     // Success page
     res.send(`
+      <!DOCTYPE html>
       <html>
-        <body style="font-family: Arial; padding: 40px; text-align: center;">
-          <h1 style="color: #27ae60;">✅ Calendar Connected!</h1>
-          <p>Your Google Calendar has been successfully connected to Mandli Scheduler.</p>
-          <p>You can close this window now.</p>
-          <p style="margin-top: 40px; color: #7f8c8d; font-size: 14px;">
-            Events will now be automatically added to your calendar.
-          </p>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Calendar Connected - Mandli Scheduler</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              min-height: 100vh;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 20px;
+            }
+            .container {
+              background: white;
+              border-radius: 16px;
+              box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+              max-width: 500px;
+              width: 100%;
+              padding: 40px;
+              text-align: center;
+            }
+            .icon { font-size: 64px; margin-bottom: 20px; }
+            h1 { color: #27ae60; margin-bottom: 20px; font-size: 28px; }
+            p { color: #666; margin: 10px 0; line-height: 1.6; }
+            .info-box {
+              background: #f0fff4;
+              border-left: 4px solid #27ae60;
+              padding: 20px;
+              margin: 30px 0;
+              text-align: left;
+              border-radius: 8px;
+            }
+            .info-box ul {
+              list-style: none;
+              padding: 0;
+            }
+            .info-box li {
+              margin: 10px 0;
+              padding-left: 25px;
+              position: relative;
+            }
+            .info-box li:before {
+              content: "✓";
+              position: absolute;
+              left: 0;
+              color: #27ae60;
+              font-weight: bold;
+            }
+            .close-button {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              border: none;
+              padding: 12px 24px;
+              font-size: 16px;
+              font-weight: 600;
+              border-radius: 8px;
+              cursor: pointer;
+              margin-top: 20px;
+            }
+            .close-button:hover { opacity: 0.9; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="icon">✅</div>
+            <h1>Calendar Connected!</h1>
+            <p>Your Google Calendar has been successfully connected to Mandli Scheduler.</p>
+
+            <div class="info-box">
+              <ul>
+                <li>Future duty assignments will automatically appear in your calendar</li>
+                <li>You'll receive email and popup reminders before shifts</li>
+                <li>No need to manually add events anymore</li>
+              </ul>
+            </div>
+
+            <p style="font-size: 14px; color: #888; margin-top: 20px;">
+              You can close this window now or click the button below.
+            </p>
+
+            <button class="close-button" onclick="window.close()">Close Window</button>
+          </div>
         </body>
       </html>
     `);
