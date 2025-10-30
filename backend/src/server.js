@@ -24,9 +24,35 @@ if (config.isProduction) {
 // Security middleware
 app.use(helmet());
 
-// CORS configuration
+// CORS configuration - Allow multiple origins
+const allowedOrigins = [
+  config.frontendUrl,
+  'http://localhost:8080',
+  'http://localhost:3000',
+  /^https:\/\/.*\.vercel\.app$/, // Allow all Vercel deployments
+  /^https:\/\/mandli.*\.vercel\.app$/ // Explicit pattern for mandli on Vercel
+];
+
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Check if origin matches any allowed origin
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      // Handle regex patterns
+      return allowedOrigin.test(origin);
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
