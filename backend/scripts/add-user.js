@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-require('dotenv').config({ path: require('path').join(__dirname, '../backend/.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { createClient } = require('@supabase/supabase-js');
 const jwt = require('jsonwebtoken');
 
@@ -9,7 +9,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
-const config = require('../backend/src/config');
+const config = require('../src/config');
 
 async function addUser() {
   const args = process.argv.slice(2);
@@ -35,13 +35,18 @@ async function addUser() {
       return;
     }
 
+    // Generate unique link
+    const uniqueLink = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+
     // Create new user
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
         full_name: fullName,
         email: email,
-        cell_phone: phone
+        cell_phone: phone,
+        gender: 'male', // Default to male, can be enhanced later
+        unique_link: uniqueLink
       })
       .select()
       .single();

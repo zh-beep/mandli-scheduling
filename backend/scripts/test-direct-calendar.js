@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-require('dotenv').config({ path: require('path').join(__dirname, '../backend/.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { google } = require('googleapis');
 const { createClient } = require('@supabase/supabase-js');
 

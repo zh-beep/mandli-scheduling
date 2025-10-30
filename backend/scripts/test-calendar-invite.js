@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-require('dotenv').config({ path: require('path').join(__dirname, '../backend/.env') });
-const calendarService = require('../backend/src/services/calendar');
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
+const calendarService = require('../src/services/calendar');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
