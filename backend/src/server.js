@@ -10,6 +10,7 @@ const userRoutes = require('./routes/users');
 const availabilityRoutes = require('./routes/availability');
 const scheduleRoutes = require('./routes/schedules');
 const calendarRoutes = require('./routes/calendar');
+const matchingRoutes = require('./routes/matching');
 
 // Create Express app
 const app = express();
@@ -64,6 +65,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/matching', matchingRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

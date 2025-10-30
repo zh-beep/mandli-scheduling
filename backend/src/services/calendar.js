@@ -72,7 +72,7 @@ async function createCalendarEvent(tokens, eventData) {
 
   // Add attendees if provided
   if (eventData.attendees && eventData.attendees.length > 0) {
-    event.attendees = eventData.attendees.map(email => ({ email }));
+    event.attendees = eventData.attendees.map(email => ({ email: email }));
   }
 
   const response = await calendar.events.insert({

@@ -5,6 +5,91 @@ const { authenticateUserLink, authenticateAdmin } = require('../middleware/auth'
 const router = express.Router();
 
 /**
+ * POST /api/availability/admin
+ * Admin endpoint to directly create/update availability for any user
+ * Requires admin authentication
+ *
+ * Request body:
+ * {
+ *   "user_id": "uuid",
+ *   "month": "2025-01",
+ *   "available_days": [1, 3, 5, 7, 15, 20, 25]
+ * }
+ */
+router.post('/admin', authenticateAdmin, async (req, res) => {
+  try {
+    const { user_id, month, available_days } = req.body;
+
+    // Validate input
+    if (!user_id || !month || !available_days) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'user_id, month and available_days are required'
+      });
+    }
+
+    // Validate month format (YYYY-MM)
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Month must be in YYYY-MM format'
+      });
+    }
+
+    // Validate available_days is an array
+    if (!Array.isArray(available_days)) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'available_days must be an array of day numbers'
+      });
+    }
+
+    // Validate day numbers (1-31)
+    const invalidDays = available_days.filter(day => day < 1 || day > 31);
+    if (invalidDays.length > 0) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Day numbers must be between 1 and 31'
+      });
+    }
+
+    // Upsert availability
+    const { data, error } = await supabaseAdmin
+      .from('availability')
+      .upsert({
+        user_id,
+        month,
+        available_days,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id,month'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({
+        error: 'Database error',
+        message: 'Failed to save availability'
+      });
+    }
+
+    res.json({
+      message: 'Availability saved successfully',
+      availability: data
+    });
+
+  } catch (error) {
+    console.error('Error saving availability:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'An error occurred while saving availability'
+    });
+  }
+});
+
+/**
  * POST /api/availability
  * Submit availability for a specific month
  * Requires valid user link token
@@ -203,7 +288,7 @@ router.get('/month/:month', authenticateAdmin, async (req, res) => {
         *,
         users (
           id,
-          name,
+          full_name,
           email,
           gender,
           is_active

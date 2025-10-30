@@ -74,7 +74,6 @@ router.get('/', async (req, res) => {
         dayMap[dateKey] = {
           date: dateKey,
           dayName: fullDate.toLocaleDateString('en-US', { weekday: 'long' }),
-          isPBS: false,
           assignments: {}
         };
       }

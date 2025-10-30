@@ -170,7 +170,6 @@ function renderWeeklyView() {
             emptyDays.push({
                 date: dayDate.toISOString().split('T')[0],
                 dayName: dayDate.toLocaleDateString('en-US', { weekday: 'long' }),
-                isPBS: false,
                 assignments: {
                     ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null,
                     lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null
@@ -194,13 +193,10 @@ function renderGridWithDays(days) {
     htmlContent += '<div class="weekly-header-cell"></div>'; // Empty corner cell
 
     days.forEach(day => {
-        const isPBS = day.isPBS;
-        const pbsClass = isPBS ? 'pbs-day' : '';
         htmlContent += `
-            <div class="weekly-header-cell day-header ${pbsClass}">
+            <div class="weekly-header-cell day-header">
                 <div class="day-date">${formatShortDate(day.date)}</div>
                 <div class="day-name">${day.dayName.substring(0, 3)}</div>
-                ${isPBS ? '<div class="pbs-badge">PBS</div>' : ''}
             </div>
         `;
     });
@@ -346,7 +342,7 @@ function approveAndSendInvites() {
 }
 
 // Modal functions
-function openEditModal(date, dutyTypeId, currentAssignment) {
+async function openEditModal(date, dutyTypeId, currentAssignment) {
     if (!isAdmin) return;
 
     currentEditingCell = { date, dutyTypeId, currentAssignment };
@@ -358,23 +354,86 @@ function openEditModal(date, dutyTypeId, currentAssignment) {
     document.getElementById('modalDate').textContent = formatDateDisplay(date);
     document.getElementById('modalDutyType').textContent = dutyType.name;
 
-    // Populate person select
+    // Parse date to get month and day
+    const [year, month, dayOfMonth] = date.split('-');
+    const monthKey = `${year}-${month}`;
+    const dayNum = parseInt(dayOfMonth, 10);
+
+    // Determine required gender from duty type
+    // dutyTypeId format: "ep_g1" (gents) or "ep_l1" (ladies)
+    const requiredGender = dutyTypeId.includes('_g') ? 'gents' : 'ladies';
+
+    // Populate person select - show loading state
     const personSelect = document.getElementById('personSelect');
-    personSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+    personSelect.innerHTML = '<option value="">Loading...</option>';
 
-    Object.keys(peopleDatabase).sort().forEach(person => {
-        const option = document.createElement('option');
-        option.value = person;
-        option.textContent = `${person} (${peopleDatabase[person].email})`;
-        if (person === currentAssignment) {
-            option.selected = true;
+    try {
+        // Fetch availability data for the month
+        const response = await fetch(`${API_BASE_URL}/availability/month/${monthKey}`, {
+            headers: {
+                'Authorization': `Bearer ${getAuthToken()}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch availability data');
         }
-        personSelect.appendChild(option);
-    });
 
+        const data = await response.json();
+
+        // Filter users by: correct gender AND available on this specific day
+        const availableUsers = data.availability
+            .filter(avail => {
+                const user = avail.users;
+                return user &&
+                       user.is_active &&
+                       user.gender === requiredGender &&
+                       avail.available_days &&
+                       avail.available_days.includes(dayNum);
+            })
+            .map(avail => ({
+                id: avail.user_id,
+                name: avail.users.full_name,
+                email: avail.users.email
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+
+        // Populate dropdown
+        personSelect.innerHTML = '<option value="">-- Unassigned --</option>';
+
+        if (availableUsers.length === 0) {
+            const noAvailOption = document.createElement('option');
+            noAvailOption.disabled = true;
+            noAvailOption.textContent = `No ${requiredGender} available on this day`;
+            personSelect.appendChild(noAvailOption);
+        } else {
+            availableUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.email})`;
+                // TODO: Match by user_id instead of name for currentAssignment
+                if (user.name === currentAssignment) {
+                    option.selected = true;
+                }
+                personSelect.appendChild(option);
+            });
+        }
+
+    } catch (error) {
+        console.error('Error loading available users:', error);
+        personSelect.innerHTML = '<option value="">Error loading users</option>';
+    }
 
     // Show modal
     modal.classList.remove('hidden');
+}
+
+// Helper function to get auth token from cookie
+function getAuthToken() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; mandli_token=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
 }
 
 function closeEditModal() {
