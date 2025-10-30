@@ -70,9 +70,15 @@ async function createCalendarEvent(tokens, eventData) {
     },
   };
 
+  // Add attendees if provided
+  if (eventData.attendees && eventData.attendees.length > 0) {
+    event.attendees = eventData.attendees.map(email => ({ email }));
+  }
+
   const response = await calendar.events.insert({
     calendarId: 'primary',
     resource: event,
+    sendUpdates: 'all', // Send email notifications to attendees
   });
 
   return response.data;

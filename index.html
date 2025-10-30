@@ -36,7 +36,12 @@
                     <path d="M15 18l-6-6 6-6"/>
                 </svg>
             </button>
-            <h2 id="currentWeek" class="current-week">Week of Sep 23 - 29, 2025</h2>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                <h2 id="currentWeek" class="current-week">Week of Sep 23 - 29, 2025</h2>
+                <div id="lastSent" class="last-sent" style="font-size: 13px; color: #666; font-weight: normal;">
+                    Last sent: Never
+                </div>
+            </div>
             <button id="nextWeek" class="nav-btn">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 18l6-6-6-6"/>
@@ -73,7 +78,6 @@
 
         <!-- Admin Actions -->
         <div class="admin-actions">
-            <button class="btn btn-secondary" id="exportBtn">Export Schedule</button>
             <button class="btn btn-primary" id="approveBtn">Approve & Send Invites</button>
         </div>
     </div>
@@ -106,6 +110,19 @@
     </div>
 
     <script src="test-data.js?v=3"></script>
-    <script src="script.js?v=4"></script>
+    <script>
+        // Check authentication
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const token = getCookie('mandli_token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+    </script>
+    <script src="script.js?v=5"></script>
 </body>
 </html>

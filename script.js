@@ -154,25 +154,46 @@ function renderWeeklyView() {
     const weekData = weeklyScheduleData[currentWeekKey];
     const weekGrid = document.getElementById('weekGrid');
 
+    // Generate week label from date even if no data
+    const startDate = currentWeekStartDate;
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+    const weekLabel = `Week of ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    document.getElementById('currentWeek').textContent = weekLabel;
+
+    // If no data, create empty week structure
     if (!weekData) {
-        weekGrid.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; color: #6C757D;">
-                <h3 style="margin-bottom: 10px;">No Schedule Available</h3>
-                <p>No duty assignments have been created for this week yet.</p>
-            </div>
-        `;
+        const emptyDays = [];
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(startDate);
+            dayDate.setDate(dayDate.getDate() + i);
+            emptyDays.push({
+                date: dayDate.toISOString().split('T')[0],
+                dayName: dayDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                isPBS: false,
+                assignments: {
+                    ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null,
+                    lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null
+                }
+            });
+        }
+        renderGridWithDays(emptyDays);
         return;
     }
 
-    // Update week label
-    document.getElementById('currentWeek').textContent = weekData.weekLabel;
+    renderGridWithDays(weekData.days);
+}
+
+// Render grid with given days data
+function renderGridWithDays(days) {
+    const weekGrid = document.getElementById('weekGrid');
 
     let htmlContent = '';
 
-    // Header row with duty type labels
+    // Header row with day labels
     htmlContent += '<div class="weekly-header-cell"></div>'; // Empty corner cell
 
-    weekData.days.forEach(day => {
+    days.forEach(day => {
         const isPBS = day.isPBS;
         const pbsClass = isPBS ? 'pbs-day' : '';
         htmlContent += `
@@ -194,7 +215,7 @@ function renderWeeklyView() {
         `;
 
         // Assignment cells for each day
-        weekData.days.forEach(day => {
+        days.forEach(day => {
             const assigned = day.assignments[dutyType.id];
             const isPBS = day.isPBS;
             const pbsClass = isPBS ? 'pbs-day' : '';
@@ -230,6 +251,23 @@ function updateWeekDisplay() {
     currentWeekKey = formatWeekKey(currentWeekStartDate);
     renderWeeklyView();
     updateStats();
+    updateLastSent();
+}
+
+// Update last sent display
+function updateLastSent() {
+    const weekData = weeklyScheduleData[currentWeekKey];
+    const lastSentEl = document.getElementById('lastSent');
+
+    if (!weekData || !lastSentEl) return;
+
+    if (weekData.lastSent) {
+        lastSentEl.textContent = `Last sent: ${weekData.lastSent}`;
+        lastSentEl.style.color = '#4CAF50';
+    } else {
+        lastSentEl.textContent = 'Last sent: Never';
+        lastSentEl.style.color = '#999';
+    }
 }
 
 // Navigate to previous week
@@ -282,13 +320,28 @@ function approveAndSendInvites() {
     }
 
     const stats = calculateStats();
+    let shouldSend = false;
+
     if (stats.coverageRate === '100%') {
+        shouldSend = true;
         alert(`✅ Schedule approved successfully!\n\n📧 Calendar invites have been sent to all ${stats.activeMandlis} Mandlis for ${weekData.weekLabel}.`);
     } else {
         const confirmSend = confirm(`⚠️ Warning: Schedule is only ${stats.coverageRate} complete.\n\nSome shifts are still unassigned. Do you want to approve and send invites anyway?`);
         if (confirmSend) {
+            shouldSend = true;
             alert(`✅ Schedule approved with gaps.\n\n📧 Calendar invites have been sent to all ${stats.activeMandlis} Mandlis for ${weekData.weekLabel}.`);
         }
+    }
+
+    if (shouldSend) {
+        // Record the send time
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        weekData.lastSent = `${dateStr.replace(/\//g, '-')} ${timeStr}`;
+
+        // Update display
+        updateLastSent();
     }
 }
 
@@ -391,7 +444,6 @@ document.addEventListener('DOMContentLoaded', function() {
         nextWeek();
         attachCellClickHandlers();
     });
-    document.getElementById('exportBtn').addEventListener('click', exportSchedule);
     document.getElementById('approveBtn').addEventListener('click', approveAndSendInvites);
 
     // Modal event listeners

@@ -135,7 +135,7 @@ router.get('/callback', async (req, res) => {
  */
 router.post('/send-invite', authenticateAdmin, async (req, res) => {
   try {
-    const { userId, title, description, startDateTime, endDateTime, timeZone } = req.body;
+    const { userId, title, description, startDateTime, endDateTime, timeZone, attendees } = req.body;
 
     // Validate input
     if (!userId || !title || !startDateTime || !endDateTime) {
@@ -187,7 +187,8 @@ router.post('/send-invite', authenticateAdmin, async (req, res) => {
       description,
       startDateTime,
       endDateTime,
-      timeZone: timeZone || 'America/New_York'
+      timeZone: timeZone || 'America/New_York',
+      attendees: attendees || []
     });
 
     // Get user info

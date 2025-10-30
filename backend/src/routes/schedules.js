@@ -423,4 +423,103 @@ router.get('/coverage/:month', authenticateAdmin, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/schedules/send-invites
+ * Send calendar invites for a specific week
+ * Requires admin authentication
+ *
+ * Request body:
+ * {
+ *   "week_start": "2025-10-28"
+ * }
+ */
+router.post('/send-invites', authenticateAdmin, async (req, res) => {
+  try {
+    const { week_start } = req.body;
+
+    if (!week_start) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'week_start is required (format: YYYY-MM-DD)'
+      });
+    }
+
+    // Parse week_start to get month and day range
+    const startDate = new Date(week_start + 'T00:00:00');
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 6);
+
+    const startMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`;
+    const endMonth = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+    const startDay = startDate.getDate();
+    const endDay = endDate.getDate();
+
+    // Get all schedules for the week with user emails
+    let query = supabaseAdmin
+      .from('schedule_details')
+      .select('*');
+
+    if (startMonth === endMonth) {
+      query = query.eq('month', startMonth).gte('day', startDay).lte('day', endDay);
+    } else {
+      query = query.or(`and(month.eq.${startMonth},day.gte.${startDay}),and(month.eq.${endMonth},day.lte.${endDay})`);
+    }
+
+    const { data: schedules, error } = await query.order('month').order('day');
+
+    if (error) {
+      console.error('Database error:', error);
+      return res.status(500).json({
+        error: 'Database error',
+        message: 'Failed to fetch schedules'
+      });
+    }
+
+    // Group by user email
+    const emailsByUser = {};
+    schedules.forEach(schedule => {
+      if (schedule.email && schedule.full_name) {
+        if (!emailsByUser[schedule.email]) {
+          emailsByUser[schedule.email] = {
+            name: schedule.full_name,
+            assignments: []
+          };
+        }
+
+        const dateStr = `${schedule.month}-${String(schedule.day).padStart(2, '0')}`;
+        const dayDate = new Date(dateStr + 'T00:00:00');
+        const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+        emailsByUser[schedule.email].assignments.push({
+          date: dateStr,
+          dayName,
+          dutyType: schedule.duty_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        });
+      }
+    });
+
+    // TODO: Actually send emails here using email service
+    // For now, just log what would be sent
+    const emailCount = Object.keys(emailsByUser).length;
+    const totalAssignments = schedules.length;
+
+    console.log('Would send emails to:', Object.keys(emailsByUser));
+    console.log('Email details:', JSON.stringify(emailsByUser, null, 2));
+
+    res.json({
+      message: `Invites prepared for ${emailCount} users with ${totalAssignments} total assignments`,
+      weekStart: week_start,
+      recipients: emailsByUser,
+      status: 'prepared' // Will be 'sent' when email service is implemented
+    });
+
+  } catch (error) {
+    console.error('Error preparing invites:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'An error occurred while preparing invites'
+    });
+  }
+});
+
 module.exports = router;

@@ -16,6 +16,7 @@ const weeklyScheduleData = {
     // Week starting Sep 23, 2025
     '2025-09-23': {
         weekLabel: 'Week of Sep 23 - 29, 2025',
+        lastSent: '2025-09-20 10:30 AM',
         days: [
             {
                 date: '2025-09-23',
@@ -126,6 +127,7 @@ const weeklyScheduleData = {
     },
     // Week starting Sep 30, 2025 (PBS week)
     '2025-09-30': {
+        lastSent: '2025-09-27 2:15 PM',
         weekLabel: 'Week of Sep 30 - Oct 6, 2025',
         days: [
             {
@@ -238,6 +240,7 @@ const weeklyScheduleData = {
     },
     // Week starting Oct 7, 2025
     '2025-10-07': {
+        lastSent: '2025-10-04 9:45 AM',
         weekLabel: 'Week of Oct 7 - 13, 2025',
         days: [
             {
@@ -349,6 +352,7 @@ const weeklyScheduleData = {
     },
     // Week starting Oct 14, 2025
     '2025-10-14': {
+        lastSent: '2025-10-11 11:20 AM',
         weekLabel: 'Week of Oct 14 - 20, 2025',
         days: [
             {
@@ -460,6 +464,7 @@ const weeklyScheduleData = {
     },
     // Week starting Oct 21, 2025
     '2025-10-21': {
+        lastSent: '2025-10-18 3:00 PM',
         weekLabel: 'Week of Oct 21 - 27, 2025',
         days: [
             { date: '2025-10-21', dayName: 'Tuesday', isPBS: false, assignments: { ep_g1: 'OF MS', ep_l1: 'OF MM', ep_g2: 'OF KS', ep_l2: 'OF KM', lp_g1: 'RJ MS', lp_l1: 'RJ MM', lp_g2: 'RJ KS', lp_l2: 'RJ KM' } },
@@ -473,6 +478,7 @@ const weeklyScheduleData = {
     },
     // Week starting Oct 28, 2025 (CURRENT WEEK - EMPTY)
     '2025-10-28': {
+        lastSent: null,
         weekLabel: 'Week of Oct 28 - Nov 3, 2025',
         days: [
             { date: '2025-10-28', dayName: 'Tuesday', isPBS: false, assignments: { ep_g1: null, ep_l1: null, ep_g2: null, ep_l2: null, lp_g1: null, lp_l1: null, lp_g2: null, lp_l2: null } },
