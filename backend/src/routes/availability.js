@@ -139,7 +139,7 @@ router.post('/', authenticateUserLink, async (req, res) => {
     }
 
     // Check if availability already exists for this user/month
-    const { data: existing, error: checkError } = await supabaseClient
+    const { data: existing, error: checkError } = await supabaseAdmin
       .from('availability')
       .select('id')
       .eq('user_id', userId)
@@ -158,7 +158,7 @@ router.post('/', authenticateUserLink, async (req, res) => {
 
     if (existing) {
       // Update existing availability
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseAdmin
         .from('availability')
         .update({
           available_days,
@@ -179,7 +179,7 @@ router.post('/', authenticateUserLink, async (req, res) => {
       result = data;
     } else {
       // Create new availability
-      const { data, error } = await supabaseClient
+      const { data, error } = await supabaseAdmin
         .from('availability')
         .insert([{
           user_id: userId,
@@ -295,7 +295,7 @@ router.get('/month/:month', authenticateAdmin, async (req, res) => {
         )
       `)
       .eq('month', month)
-      .order('created_at', { ascending: false });
+      .order('submitted_at', { ascending: false });
 
     if (error) {
       console.error('Database error:', error);
