@@ -26,9 +26,8 @@ app.use(helmet());
 
 // CORS configuration - Allow multiple origins
 const allowedOrigins = [
+  ...config.allowedOrigins,
   config.frontendUrl,
-  'http://localhost:8080',
-  'http://localhost:3000',
   /^https:\/\/.*\.vercel\.app$/, // Allow all Vercel deployments
   /^https:\/\/mandli.*\.vercel\.app$/ // Explicit pattern for mandli on Vercel
 ];

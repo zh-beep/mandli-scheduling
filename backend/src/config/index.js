@@ -35,5 +35,10 @@ module.exports = {
   },
 
   // Frontend
-  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000'
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+
+  // CORS allowed origins (comma-separated)
+  allowedOrigins: process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(url => url.trim())
+    : ['http://localhost:8080', 'http://localhost:3000']
 };
