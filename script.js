@@ -1,8 +1,12 @@
+// API Configuration
+const API_BASE_URL = 'http://localhost:3001/api';
+
 // Global state
 let currentWeekStartDate = getStartOfWeek(new Date());
 let currentWeekKey = formatWeekKey(currentWeekStartDate);
 let isAdmin = true; // In production, this would come from authentication
 let currentEditingCell = null;
+let scheduleData = {}; // Will be loaded from API
 
 // People database with emails
 let peopleDatabase = {
@@ -102,9 +106,33 @@ function getPersonColor(person) {
     return colorMap[prefix] || { bg: '#E0E0E0', text: '#616161' };
 }
 
+// API Functions
+async function fetchScheduleData(weekKey) {
+    try {
+        const startDate = weekKey;
+        const response = await fetch(`${API_BASE_URL}/schedules?week_start=${startDate}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error fetching schedule data:', error);
+        return null;
+    }
+}
+
+async function loadScheduleData() {
+    const data = await fetchScheduleData(currentWeekKey);
+    if (data) {
+        scheduleData[currentWeekKey] = data;
+    }
+    return data;
+}
+
 // Calculate statistics for the current week
 function calculateStats() {
-    const weekData = weeklyScheduleData[currentWeekKey];
+    const weekData = scheduleData[currentWeekKey];
 
     if (!weekData) {
         return {
@@ -150,8 +178,8 @@ function updateStats() {
 }
 
 // Render the weekly view
-function renderWeeklyView() {
-    const weekData = weeklyScheduleData[currentWeekKey];
+async function renderWeeklyView() {
+    const weekData = scheduleData[currentWeekKey];
     const weekGrid = document.getElementById('weekGrid');
 
     if (!weekData) {
@@ -226,27 +254,33 @@ function renderWeeklyView() {
 }
 
 // Update week display
-function updateWeekDisplay() {
+async function updateWeekDisplay() {
     currentWeekKey = formatWeekKey(currentWeekStartDate);
-    renderWeeklyView();
+
+    // Load data from API if not cached
+    if (!scheduleData[currentWeekKey]) {
+        await loadScheduleData();
+    }
+
+    await renderWeeklyView();
     updateStats();
 }
 
 // Navigate to previous week
-function previousWeek() {
+async function previousWeek() {
     currentWeekStartDate.setDate(currentWeekStartDate.getDate() - 7);
-    updateWeekDisplay();
+    await updateWeekDisplay();
 }
 
 // Navigate to next week
-function nextWeek() {
+async function nextWeek() {
     currentWeekStartDate.setDate(currentWeekStartDate.getDate() + 7);
-    updateWeekDisplay();
+    await updateWeekDisplay();
 }
 
 // Export schedule to CSV
 function exportSchedule() {
-    const weekData = weeklyScheduleData[currentWeekKey];
+    const weekData = scheduleData[currentWeekKey];
     if (!weekData) {
         alert('No schedule available to export for this week.');
         return;
@@ -275,7 +309,7 @@ function exportSchedule() {
 
 // Approve and send invites (simulation)
 function approveAndSendInvites() {
-    const weekData = weeklyScheduleData[currentWeekKey];
+    const weekData = scheduleData[currentWeekKey];
     if (!weekData) {
         alert('No schedule available to approve for this week.');
         return;
@@ -329,22 +363,23 @@ function closeEditModal() {
     currentEditingCell = null;
 }
 
-function saveAssignment() {
+async function saveAssignment() {
     if (!currentEditingCell) return;
 
     const { date, dutyTypeId } = currentEditingCell;
     const selectedPerson = document.getElementById('personSelect').value;
 
-    // Find the day in the data
-    const weekData = weeklyScheduleData[currentWeekKey];
+    // TODO: Save to API
+    // For now, update local data
+    const weekData = scheduleData[currentWeekKey];
     const day = weekData.days.find(d => d.date === date);
 
     if (day) {
-        // Update assignment
+        // Update assignment locally
         day.assignments[dutyTypeId] = selectedPerson || null;
 
         // Re-render
-        renderWeeklyView();
+        await renderWeeklyView();
         updateStats();
         attachCellClickHandlers();
 
@@ -358,7 +393,7 @@ function saveAssignment() {
 function attachCellClickHandlers() {
     if (!isAdmin) return;
 
-    const weekData = weeklyScheduleData[currentWeekKey];
+    const weekData = scheduleData[currentWeekKey];
     if (!weekData) return;
 
     // Get all assignment cells
@@ -381,14 +416,14 @@ function attachCellClickHandlers() {
 }
 
 // Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Set up event listeners
-    document.getElementById('prevWeek').addEventListener('click', () => {
-        previousWeek();
+    document.getElementById('prevWeek').addEventListener('click', async () => {
+        await previousWeek();
         attachCellClickHandlers();
     });
-    document.getElementById('nextWeek').addEventListener('click', () => {
-        nextWeek();
+    document.getElementById('nextWeek').addEventListener('click', async () => {
+        await nextWeek();
         attachCellClickHandlers();
     });
     document.getElementById('exportBtn').addEventListener('click', exportSchedule);
@@ -406,7 +441,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial render
-    updateWeekDisplay();
+    // Initial render - load data from API
+    console.log('Loading schedule data from API...');
+    await updateWeekDisplay();
     attachCellClickHandlers();
 });

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "supabase-mandli": {
+      "command": "/opt/homebrew/bin/npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_4ad1e226d3ca8cad7b0ac93ee486b2bd74548bf8"
+      ]
+    }
+  }
+}
