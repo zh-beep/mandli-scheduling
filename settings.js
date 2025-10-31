@@ -4,7 +4,9 @@ let settings = {
     reminderFrequency: 'none'
 };
 
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('mandli')
+    ? 'https://mandli-production.up.railway.app/api'
+    : 'http://localhost:3001/api';
 let usersCache = []; // Cache users from Supabase
 
 // Helper to get auth token
@@ -88,32 +90,30 @@ function saveNotificationSettings() {
 // Generate unique link for a user
 async function generateUserLink(userId) {
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/link`, {
-            headers: {
-                'Authorization': `Bearer ${getAuthToken()}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to generate link');
+        // Find user in cache
+        const user = usersCache.find(u => u.id === userId);
+        if (!user) {
+            throw new Error('User not found');
         }
 
-        const data = await response.json();
+        // Build permanent link using unique_link token
+        const baseUrl = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('mandli')
+            ? 'https://mandli-scheduling.vercel.app'
+            : window.location.origin;
 
-        // Show link in a modal - truncate to last 20 characters for display
-        const linkText = data.link;
-        const shortLink = '...' + linkText.slice(-20);
+        const linkText = `${baseUrl}/availability.html?link=${user.unique_link}`;
+        const shortLink = '...' + user.unique_link.slice(-20);
 
         // Use modal with copy button
         const modal = document.createElement('div');
         modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
         modal.innerHTML = `
             <div style="background:white;padding:30px;border-radius:15px;max-width:500px;width:90%;">
-                <h3 style="margin-bottom:15px;">📧 Unique Link for ${data.user.name}</h3>
+                <h3 style="margin-bottom:15px;">📧 Unique Link for ${user.full_name}</h3>
                 <p style="margin-bottom:15px;color:#666;">Link: ${shortLink}</p>
                 <input type="text" id="fullLinkInput" value="${linkText}" style="width:100%;padding:10px;border:2px solid #E0E0E0;border-radius:8px;font-family:monospace;font-size:12px;margin-bottom:15px;" readonly>
                 <div style="display:flex;gap:10px;">
-                    <button onclick="navigator.clipboard.writeText('${linkText}').then(() => alert('✅ Link copied!')); this.closest('div').parentElement.parentElement.remove();" style="flex:1;padding:12px;background:#4A90E2;color:white;border:none;border-radius:10px;cursor:pointer;">Copy Link</button>
+                    <button onclick="navigator.clipboard.writeText('${linkText}').then(() => alert('✅ Permanent link copied! This link never expires.')); this.closest('div').parentElement.parentElement.remove();" style="flex:1;padding:12px;background:#4A90E2;color:white;border:none;border-radius:10px;cursor:pointer;">Copy Link</button>
                     <button onclick="this.closest('div').parentElement.parentElement.remove()" style="padding:12px 20px;background:#ccc;color:#333;border:none;border-radius:10px;cursor:pointer;">Close</button>
                 </div>
             </div>
