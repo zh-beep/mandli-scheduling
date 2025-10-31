@@ -279,10 +279,10 @@ async function submitAvailability() {
             const response = await fetch(`${API_BASE_URL}/availability`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-Link-Token': currentLinkToken
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    link_token: currentLinkToken,
                     month: monthStr,
                     available_days: availableDays
                 })
@@ -329,11 +329,7 @@ async function loadSavedAvailability() {
     try {
         // Try to load from API if we have a link token
         if (currentLinkToken) {
-            const response = await fetch(`${API_BASE_URL}/availability?month=${monthStr}`, {
-                headers: {
-                    'X-Link-Token': currentLinkToken
-                }
-            });
+            const response = await fetch(`${API_BASE_URL}/availability?link_token=${currentLinkToken}&month=${monthStr}`);
 
             if (response.ok) {
                 const data = await response.json();

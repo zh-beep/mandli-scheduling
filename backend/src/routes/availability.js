@@ -92,18 +92,41 @@ router.post('/admin', authenticateAdmin, async (req, res) => {
 /**
  * POST /api/availability
  * Submit availability for a specific month
- * Requires valid user link token
+ * Just needs link token to write directly to database
  *
  * Request body:
  * {
+ *   "link_token": "unique-link-token",
  *   "month": "2025-01",
  *   "available_days": [1, 3, 5, 7, 15, 20, 25]
  * }
  */
-router.post('/', authenticateUserLink, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { month, available_days } = req.body;
-    const userId = req.user.id;
+    const { link_token, month, available_days } = req.body;
+
+    // Look up user by link token
+    if (!link_token) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'link_token is required'
+      });
+    }
+
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('unique_link', link_token)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        error: 'Invalid link',
+        message: 'User not found for this link token'
+      });
+    }
+
+    const userId = user.id;
 
     // Validate input
     if (!month || !available_days) {
@@ -217,15 +240,38 @@ router.post('/', authenticateUserLink, async (req, res) => {
 /**
  * GET /api/availability
  * Get availability for a specific user and month
- * Requires valid user link token
+ * Just needs link token in query
  *
  * Query params:
+ * - link_token: unique link token (required)
  * - month: YYYY-MM (required)
  */
-router.get('/', authenticateUserLink, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const { month } = req.query;
-    const userId = req.user.id;
+    const { link_token, month } = req.query;
+
+    if (!link_token) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'link_token query parameter is required'
+      });
+    }
+
+    // Look up user by link token
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, full_name, email')
+      .eq('unique_link', link_token)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        error: 'Invalid link',
+        message: 'User not found for this link token'
+      });
+    }
+
+    const userId = user.id;
 
     if (!month) {
       return res.status(400).json({
@@ -252,7 +298,7 @@ router.get('/', authenticateUserLink, async (req, res) => {
 
     res.json({
       availability: availability || null,
-      user: req.user
+      user: user
     });
 
   } catch (error) {
