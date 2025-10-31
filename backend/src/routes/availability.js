@@ -1,6 +1,7 @@
 const express = require('express');
 const { supabaseClient, supabaseAdmin } = require('../config/supabase');
 const { authenticateUserLink, authenticateAdmin } = require('../middleware/auth');
+const { generateMonthlySchedule, applySchedule } = require('../services/matching');
 
 const router = express.Router();
 
@@ -221,6 +222,17 @@ router.post('/', async (req, res) => {
       }
 
       result = data;
+    }
+
+    // Automatically run scheduling algorithm after saving availability
+    console.log(`Running scheduling algorithm for month ${month}...`);
+    try {
+      const schedule = await generateMonthlySchedule(month);
+      const applied = await applySchedule(month, schedule);
+      console.log(`Schedule generated and applied: ${applied.assignments.length} assignments created`);
+    } catch (scheduleError) {
+      console.error('Error running scheduling algorithm:', scheduleError);
+      // Don't fail the request if scheduling fails - availability is already saved
     }
 
     res.json({
