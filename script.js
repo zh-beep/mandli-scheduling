@@ -1,8 +1,12 @@
+// API Configuration
+const API_BASE_URL = 'https://mandli-production.up.railway.app/api';
+
 // Global state
 let currentWeekStartDate = getStartOfWeek(new Date());
 let currentWeekKey = formatWeekKey(currentWeekStartDate);
 let isAdmin = true; // In production, this would come from authentication
 let currentEditingCell = null;
+let weeklyScheduleData = {}; // Will be populated from API
 
 // People database with emails
 let peopleDatabase = {
@@ -485,16 +489,56 @@ function attachCellClickHandlers() {
     });
 }
 
+// Fetch schedule data from API
+async function fetchWeekSchedule(weekStartDate) {
+    const dateStr = weekStartDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/schedules?week_start=${dateStr}`);
+
+        if (!response.ok) {
+            console.error('Failed to fetch schedule:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        return data.days || [];
+    } catch (error) {
+        console.error('Error fetching schedule:', error);
+        return null;
+    }
+}
+
+// Load schedule data and render
+async function loadAndRenderWeek() {
+    const days = await fetchWeekSchedule(currentWeekStartDate);
+
+    if (days) {
+        // Store in weeklyScheduleData for compatibility
+        const weekData = {
+            weekLabel: `Week of ${currentWeekStartDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+            lastSent: null,
+            days: days
+        };
+        weeklyScheduleData[currentWeekKey] = weekData;
+    }
+
+    // Render the view
+    renderWeeklyView();
+    updateStats();
+    attachCellClickHandlers();
+}
+
 // Initialize the app
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     // Set up event listeners
-    document.getElementById('prevWeek').addEventListener('click', () => {
+    document.getElementById('prevWeek').addEventListener('click', async () => {
         previousWeek();
-        attachCellClickHandlers();
+        await loadAndRenderWeek();
     });
-    document.getElementById('nextWeek').addEventListener('click', () => {
+    document.getElementById('nextWeek').addEventListener('click', async () => {
         nextWeek();
-        attachCellClickHandlers();
+        await loadAndRenderWeek();
     });
     document.getElementById('approveBtn').addEventListener('click', approveAndSendInvites);
 
@@ -510,7 +554,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Initial render
-    updateWeekDisplay();
-    attachCellClickHandlers();
+    // Initial render - load data from API
+    await loadAndRenderWeek();
 });
