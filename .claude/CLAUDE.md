@@ -118,3 +118,127 @@ npm run dev  # Starts server without auto-open
 5. **Export Capability**: Download schedules as CSV
 6. **Responsive**: Works on all device sizes
 7. **Realistic Data**: Shows various coverage scenarios
+
+---
+
+## Backend Integration Tests
+
+### Overview
+Comprehensive integration tests covering end-to-end workflows from user availability submission through scheduling algorithm to admin assignment views.
+
+### Test Suite Location
+- **File**: `backend/src/__tests__/integration/workflow.test.js`
+- **Config**: `backend/jest.config.js`
+- **Framework**: Jest with 30s timeout for integration tests
+
+### Running Tests
+
+```bash
+cd backend
+
+# Run all tests
+npm test
+
+# Run integration tests only
+npm test -- workflow.test.js
+
+# Run with coverage report
+npm test -- --coverage
+
+# Run in watch mode
+npm run test:watch
+```
+
+### Test Coverage (3 Tests - All Passing ✅)
+
+#### Test 1: User Availability → Scheduling → Admin View
+**Workflow:**
+1. User accesses unique link
+2. User submits availability for specific days (1, 5, 10, 15, 20, 25)
+3. Admin runs scheduling algorithm (`generateMonthlySchedule()`)
+4. System applies schedule to database (`applySchedule()`)
+5. Admin views schedule and sees user's assignments
+6. Verifies user only assigned to available days
+
+**Validates:**
+- Unique link authentication works
+- Availability submission saves to database
+- Scheduling algorithm respects availability
+- Assignments appear in admin portal
+- Users only assigned to days they're available
+
+#### Test 2: Remove User → Reassign
+**Workflow:**
+1. Generate initial schedule with user assignments
+2. Admin removes user from specific day (day 10)
+3. Verify assignment deleted from database
+4. Reassign same user to same day
+5. Confirm no duplicate assignments exist
+
+**Validates:**
+- Assignment deletion works correctly
+- Users can be reassigned to previously removed days
+- No duplicate assignments created
+- Database constraints working properly
+
+#### Test 3: Availability Constraints
+**Workflow:**
+1. User submits limited availability (days 1, 15, 30 only)
+2. Run scheduling algorithm with multiple users
+3. Verify ALL assignments only on available days
+
+**Validates:**
+- Scheduling algorithm strictly respects availability
+- No assignments on unavailable days
+- Load balancing works within constraints
+
+### Test Database Setup
+- **Database**: Supabase (real database, not mocked)
+- **Cleanup**: Automatic cleanup after each test
+- **Test Users**: Creates 4 test users (2 gents, 2 ladies)
+- **Test Month**: 2025-11 (November 2025)
+- **Isolation**: Each test independent and idempotent
+
+### Code Coverage
+- **Overall**: 90.69% of matching.js service
+- **Lines**: 90.24%
+- **Branches**: 78.94%
+- **Functions**: 100%
+
+### Key Test Functions
+
+```javascript
+// Helper: Clean up test data
+cleanupTestData(testUserIds, testMonth)
+
+// Setup: Create test users before each test
+beforeEach() → Creates 4 users with unique links
+
+// Teardown: Remove test data after each test
+afterEach() → Cleans schedules, availability, users
+```
+
+### Test Data Structure
+
+**Test Users Created:**
+```javascript
+[
+  { name: 'Test User Gents 1', gender: 'gents', unique_link: 'test-gents-1-unique-link' },
+  { name: 'Test User Gents 2', gender: 'gents', unique_link: 'test-gents-2-unique-link' },
+  { name: 'Test User Ladies 1', gender: 'ladies', unique_link: 'test-ladies-1-unique-link' },
+  { name: 'Test User Ladies 2', gender: 'ladies', unique_link: 'test-ladies-2-unique-link' }
+]
+```
+
+### Continuous Integration
+- Tests run automatically on push to main branch
+- Railway deployment includes test verification
+- All tests must pass before deployment
+
+### Future Test Ideas
+- [ ] Test scheduling algorithm with insufficient availability
+- [ ] Test handling of conflicting assignments
+- [ ] Test gender-based slot assignments
+- [ ] Test load balancing across users
+- [ ] Test calendar view API endpoints
+- [ ] Test notification system (when implemented)
