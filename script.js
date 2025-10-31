@@ -394,7 +394,28 @@ async function openEditModal(date, dutyTypeId, currentAssignment) {
 
         const data = await response.json();
 
-        // Filter users by: correct gender AND available on this specific day
+        // Get all assignments for this date to prevent double-booking
+        const weekData = weeklyScheduleData[currentWeekKey];
+        const dayData = weekData?.days.find(d => d.date === date);
+        const assignedUserIds = new Set();
+
+        if (dayData?.assignments) {
+            // Collect all user IDs already assigned on this date (across all OTHER duty types)
+            Object.entries(dayData.assignments).forEach(([dutId, assignedName]) => {
+                // Skip the current duty type (allow re-assigning same slot)
+                if (dutId !== dutyTypeId && assignedName) {
+                    // Find the user ID from the name
+                    const matchingAvail = data.availability.find(
+                        avail => avail.users?.full_name === assignedName
+                    );
+                    if (matchingAvail) {
+                        assignedUserIds.add(matchingAvail.user_id);
+                    }
+                }
+            });
+        }
+
+        // Filter users by: correct gender AND available on this specific day AND not already assigned
         const availableUsers = data.availability
             .filter(avail => {
                 const user = avail.users;
@@ -402,7 +423,8 @@ async function openEditModal(date, dutyTypeId, currentAssignment) {
                        user.is_active &&
                        user.gender === requiredGender &&
                        avail.available_days &&
-                       avail.available_days.includes(dayNum);
+                       avail.available_days.includes(dayNum) &&
+                       !assignedUserIds.has(avail.user_id);  // Prevent double-booking
             })
             .map(avail => ({
                 id: avail.user_id,
@@ -454,27 +476,72 @@ function closeEditModal() {
     currentEditingCell = null;
 }
 
-function saveAssignment() {
+async function saveAssignment() {
     if (!currentEditingCell) return;
 
     const { date, dutyTypeId } = currentEditingCell;
-    const selectedPerson = document.getElementById('personSelect').value;
+    const selectedUserId = document.getElementById('personSelect').value;
 
-    // Find the day in the data
-    const weekData = weeklyScheduleData[currentWeekKey];
-    const day = weekData.days.find(d => d.date === date);
+    // Convert frontend dutyTypeId to backend duty_type format
+    const dutyTypeMap = {
+        'ep_g1': 'early_paat_gents_1',
+        'ep_l1': 'early_paat_ladies_1',
+        'ep_g2': 'early_paat_gents_2',
+        'ep_l2': 'early_paat_ladies_2',
+        'lp_g1': 'late_paat_gents_1',
+        'lp_l1': 'late_paat_ladies_1',
+        'lp_g2': 'late_paat_gents_2',
+        'lp_l2': 'late_paat_ladies_2'
+    };
 
-    if (day) {
-        // Update assignment
-        day.assignments[dutyTypeId] = selectedPerson || null;
+    const dutyType = dutyTypeMap[dutyTypeId];
+    if (!dutyType) {
+        console.error('Unknown duty type:', dutyTypeId);
+        return;
+    }
 
-        // Re-render
+    // Parse date to get month and day
+    const [year, month, dayOfMonth] = date.split('-');
+    const monthKey = `${year}-${month}`;
+    const dayNum = parseInt(dayOfMonth, 10);
+
+    try {
+        // Call backend API to save assignment
+        const response = await fetch(`${API_BASE_URL}/schedules`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${getAuthToken()}`
+            },
+            body: JSON.stringify({
+                month: monthKey,
+                day: dayNum,
+                duty_type: dutyType,
+                user_id: selectedUserId || null
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to save assignment');
+        }
+
+        const result = await response.json();
+        console.log('Assignment saved:', result);
+
+        // Reload schedule data for the current week to get fresh data with full names
+        await loadWeekSchedule(currentWeekStartDate);
+
+        // Re-render with fresh data
         renderWeeklyView();
         updateStats();
         attachCellClickHandlers();
 
         // Close modal
         closeEditModal();
+
+    } catch (error) {
+        console.error('Error saving assignment:', error);
+        alert('Failed to save assignment. Please try again.');
     }
 }
 
