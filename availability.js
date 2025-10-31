@@ -11,31 +11,57 @@ let dragMode = null; // 'available' or 'unavailable'
 // PBS Days removed - no longer needed
 
 // Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    loadUserFromURL();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadUserFromURL(); // Wait for user info to load
     loadUserInfo();
     renderCalendar();
     attachEventListeners();
     loadSavedAvailability();
 });
 
-// Load user from URL parameter
-function loadUserFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+// API Configuration
+const API_BASE_URL = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('mandli')
+    ? 'https://mandli-production.up.railway.app/api'
+    : 'http://localhost:3001/api';
 
-    if (token) {
+// Load user from URL parameter
+async function loadUserFromURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkToken = urlParams.get('link');
+    const jwtToken = urlParams.get('token');
+
+    // Priority 1: Permanent link token (preferred method)
+    if (linkToken) {
         try {
-            // Decode JWT token (just decode the payload, no verification needed on frontend)
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const response = await fetch(`${API_BASE_URL}/users/by-link/${linkToken}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                currentUserId = data.user.id;
+                currentUserName = data.user.name || 'Guest User';
+                console.log('User loaded via permanent link:', currentUserName);
+            } else {
+                console.error('Invalid link token');
+                currentUserName = 'Invalid Link';
+            }
+        } catch (error) {
+            console.error('Error validating link:', error);
+            currentUserName = 'Error Loading User';
+        }
+    }
+    // Priority 2: JWT token (temporary links)
+    else if (jwtToken) {
+        try {
+            const payload = JSON.parse(atob(jwtToken.split('.')[1]));
             currentUserId = payload.userId;
             currentUserName = payload.name || 'Guest User';
         } catch (error) {
-            console.error('Error decoding token:', error);
+            console.error('Error decoding JWT token:', error);
             currentUserName = 'Guest User';
         }
-    } else {
-        // Fallback for old URL format with ?id and ?name
+    }
+    // Priority 3: Fallback for old URL format with ?id and ?name
+    else {
         currentUserId = urlParams.get('id');
         if (currentUserId) {
             currentUserName = urlParams.get('name') || `User ${currentUserId}`;

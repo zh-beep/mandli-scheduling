@@ -346,4 +346,53 @@ router.post('/:id/regenerate-link', authenticateAdmin, async (req, res) => {
   }
 });
 
+/**
+ * GET /api/users/by-link/:linkToken
+ * Get user information by their unique link token (public endpoint)
+ * Used for validating permanent availability links
+ */
+router.get('/by-link/:linkToken', async (req, res) => {
+  try {
+    const { linkToken } = req.params;
+
+    // Find user by unique link
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('id, full_name, email, gender, is_active')
+      .eq('unique_link', linkToken)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({
+        error: 'Not found',
+        message: 'Invalid or expired link'
+      });
+    }
+
+    // Check if user is active
+    if (!user.is_active) {
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'This user account has been deactivated'
+      });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        gender: user.gender
+      }
+    });
+
+  } catch (error) {
+    console.error('Error validating link:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: 'An error occurred while validating link'
+    });
+  }
+});
+
 module.exports = router;

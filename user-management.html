@@ -355,7 +355,7 @@
                                 <td><span class="badge badge-${user.gender}">${user.gender}</span></td>
                                 <td>
                                     <span class="availability-link" title="${user.unique_link}">${user.unique_link}</span>
-                                    <button class="btn btn-sm copy-btn" onclick="copyLink('${user.id}')">Copy</button>
+                                    <button class="btn btn-sm copy-btn" onclick="copyLink('${user.unique_link}')">Copy Link</button>
                                 </td>
                                 <td class="actions">
                                     <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}', '${user.full_name}')">Delete</button>
@@ -369,27 +369,17 @@
             document.getElementById('userListContainer').innerHTML = tableHtml;
         }
 
-        // Copy availability link - fetch the proper JWT link from backend
-        async function copyLink(userId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/users/${userId}/generate-link`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+        // Copy availability link - use permanent unique link
+        function copyLink(uniqueLink) {
+            const baseUrl = window.location.origin;
+            const fullLink = `${baseUrl}/availability.html?link=${uniqueLink}`;
 
-                if (!response.ok) throw new Error('Failed to generate link');
-
-                const data = await response.json();
-
-                // Copy the full link which includes the JWT token
-                await navigator.clipboard.writeText(data.link);
-                showAlert('Availability link copied to clipboard!');
-            } catch (error) {
+            navigator.clipboard.writeText(fullLink).then(() => {
+                showAlert('Permanent availability link copied to clipboard!');
+            }).catch(error => {
                 console.error('Error copying link:', error);
                 showAlert('Failed to copy link. Please try again.', 'error');
-            }
+            });
         }
 
         // Delete user
