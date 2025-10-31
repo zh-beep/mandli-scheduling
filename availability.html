@@ -81,13 +81,14 @@
     <script src="test-data.js"></script>
     <script src="availability.js"></script>
     <script>
-        // Show navigation tabs only if NOT accessed via token (i.e., admin view)
+        // Show navigation tabs only for admin (no link or token parameter)
         (function() {
             const urlParams = new URLSearchParams(window.location.search);
             const hasToken = urlParams.has('token');
+            const hasLink = urlParams.has('link');
 
-            // If no token parameter, this is admin accessing the page - show navigation
-            if (!hasToken) {
+            // Only show navigation if accessing without any parameters (admin)
+            if (!hasToken && !hasLink) {
                 const navTabs = document.getElementById('navTabs');
                 if (navTabs) {
                     navTabs.style.display = 'flex';
