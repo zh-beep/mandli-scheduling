@@ -22,12 +22,24 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load user from URL parameter
 function loadUserFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    currentUserId = urlParams.get('id');
+    const token = urlParams.get('token');
 
-    if (currentUserId) {
-        // In production, fetch user details from backend using the ID
-        // For now, use the ID to set the username
-        currentUserName = urlParams.get('name') || `User ${currentUserId}`;
+    if (token) {
+        try {
+            // Decode JWT token (just decode the payload, no verification needed on frontend)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            currentUserId = payload.userId;
+            currentUserName = payload.name || 'Guest User';
+        } catch (error) {
+            console.error('Error decoding token:', error);
+            currentUserName = 'Guest User';
+        }
+    } else {
+        // Fallback for old URL format with ?id and ?name
+        currentUserId = urlParams.get('id');
+        if (currentUserId) {
+            currentUserName = urlParams.get('name') || `User ${currentUserId}`;
+        }
     }
 }
 

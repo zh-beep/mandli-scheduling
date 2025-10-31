@@ -355,7 +355,7 @@
                                 <td><span class="badge badge-${user.gender}">${user.gender}</span></td>
                                 <td>
                                     <span class="availability-link" title="${user.unique_link}">${user.unique_link}</span>
-                                    <button class="btn btn-sm copy-btn" onclick="copyLink('${user.unique_link}')">Copy</button>
+                                    <button class="btn btn-sm copy-btn" onclick="copyLink('${user.id}')">Copy</button>
                                 </td>
                                 <td class="actions">
                                     <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}', '${user.full_name}')">Delete</button>
@@ -369,12 +369,27 @@
             document.getElementById('userListContainer').innerHTML = tableHtml;
         }
 
-        // Copy availability link
-        function copyLink(link) {
-            const fullLink = `https://mandli-scheduling.vercel.app/availability.html?link=${link}`;
-            navigator.clipboard.writeText(fullLink).then(() => {
+        // Copy availability link - fetch the proper JWT link from backend
+        async function copyLink(userId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/users/${userId}/generate-link`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to generate link');
+
+                const data = await response.json();
+
+                // Copy the full link which includes the JWT token
+                await navigator.clipboard.writeText(data.link);
                 showAlert('Availability link copied to clipboard!');
-            });
+            } catch (error) {
+                console.error('Error copying link:', error);
+                showAlert('Failed to copy link. Please try again.', 'error');
+            }
         }
 
         // Delete user
