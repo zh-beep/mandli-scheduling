@@ -1,6 +1,18 @@
 // API Configuration
 const API_BASE_URL = 'https://mandli-production.up.railway.app/api';
 
+// Duty types configuration
+const dutyTypes = [
+    { id: 'ep_g1', name: 'Paat Volunteer - Early Paat (Gents)', shortName: 'Early Paat (G)', color: '#4A90E2', bgColor: '#E3F2FD' },
+    { id: 'ep_l1', name: 'Paat Volunteer - Early Paat (Ladies)', shortName: 'Early Paat (L)', color: '#E91E63', bgColor: '#FCE4EC' },
+    { id: 'ep_g2', name: 'Paat Volunteer - Early Paat (Gents)', shortName: 'Early Paat (G)', color: '#2196F3', bgColor: '#E1F5FE' },
+    { id: 'ep_l2', name: 'Paat Volunteer - Early Paat (Ladies)', shortName: 'Early Paat (L)', color: '#FF4081', bgColor: '#F8BBD0' },
+    { id: 'lp_g1', name: 'Paat Volunteer - Late Paat (Gents)', shortName: 'Late Paat (G)', color: '#9C27B0', bgColor: '#F3E5F5' },
+    { id: 'lp_l1', name: 'Paat Volunteer - Late Paat (Ladies)', shortName: 'Late Paat (L)', color: '#FF5722', bgColor: '#FBE9E7' },
+    { id: 'lp_g2', name: 'Paat Volunteer - Late Paat (Gents)', shortName: 'Late Paat (G)', color: '#673AB7', bgColor: '#EDE7F6' },
+    { id: 'lp_l2', name: 'Paat Volunteer - Late Paat (Ladies)', shortName: 'Late Paat (L)', color: '#FF6F00', bgColor: '#FFF3E0' }
+];
+
 // Global state
 let currentWeekStartDate = getStartOfWeek(new Date());
 let currentWeekKey = formatWeekKey(currentWeekStartDate);
