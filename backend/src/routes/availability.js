@@ -228,8 +228,12 @@ router.post('/', async (req, res) => {
     console.log(`Running scheduling algorithm for month ${month}...`);
     try {
       const schedule = await generateMonthlySchedule(month);
-      const applied = await applySchedule(month, schedule);
-      console.log(`Schedule generated and applied: ${applied.assignments.length} assignments created`);
+      if (schedule.success && schedule.assignments.length > 0) {
+        const applied = await applySchedule(month, schedule.assignments);
+        console.log(`Schedule generated and applied: ${schedule.assignments.length} assignments created`);
+      } else {
+        console.log('No assignments generated - insufficient availability or users');
+      }
     } catch (scheduleError) {
       console.error('Error running scheduling algorithm:', scheduleError);
       // Don't fail the request if scheduling fails - availability is already saved
