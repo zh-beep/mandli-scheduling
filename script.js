@@ -196,6 +196,10 @@ function renderWeeklyView() {
 function renderGridWithDays(days) {
     const weekGrid = document.getElementById('weekGrid');
 
+    // Set grid columns dynamically based on number of days
+    const numDays = days.length;
+    weekGrid.style.gridTemplateColumns = `150px repeat(${numDays}, 1fr)`;
+
     let htmlContent = '';
 
     // Header row with day labels

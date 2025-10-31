@@ -96,11 +96,23 @@ router.get('/', async (req, res) => {
       }
     });
 
-    const days = Object.values(dayMap);
+    // Ensure all 7 days are included, even if no schedules
+    const allDays = [];
+    for (let i = 0; i < 7; i++) {
+      const currentDate = new Date(startDate);
+      currentDate.setDate(startDate.getDate() + i);
+      const dateKey = currentDate.toISOString().split('T')[0];
+
+      allDays.push(dayMap[dateKey] || {
+        date: dateKey,
+        dayName: currentDate.toLocaleDateString('en-US', { weekday: 'long' }),
+        assignments: {}
+      });
+    }
 
     res.json({
       weekLabel: `Week of ${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
-      days
+      days: allDays
     });
 
   } catch (error) {
