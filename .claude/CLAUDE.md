@@ -110,6 +110,27 @@ npm start  # Starts server on port 3000, opens browser
 npm run dev  # Starts server without auto-open
 ```
 
+### Deployment
+
+#### Frontend (Vercel)
+- **URL**: https://mandli-scheduling.vercel.app
+- **Auto-deploy**: Connected to GitHub repo `zh-beep/mandli-scheduling`
+- **Trigger**: Automatic deployment on push to `main` branch
+- **No manual deployment needed** - just push to GitHub
+
+#### Backend (Railway)
+- **URL**: https://mandli-backend.railway.app (or similar)
+- **Deployment Method**: Railway CLI (NOT GitHub auto-deploy)
+- **Manual deployment required**:
+  ```bash
+  cd backend
+  railway up
+  ```
+- **Project**: mandli (production environment)
+- Railway CLI is installed at `/opt/homebrew/bin/railway`
+
+**Important**: Backend does NOT auto-deploy from GitHub. Always use `railway up` after pushing backend changes.
+
 ### Client Demo Points
 1. **Visual Appeal**: Professional design with gradient header and color coding
 2. **Data Visualization**: Calendar clearly shows coverage gaps
