@@ -3,6 +3,7 @@ let currentDate = new Date();
 let availabilityData = {}; // Format: { '2025-10-15': true, '2025-10-16': false, ... }
 let currentUserName = 'Guest User'; // In production, this would come from auth
 let currentUserId = null; // Unique ID from URL
+let currentLinkToken = null; // Permanent link token for API calls
 
 // Swipe/drag selection state
 let isMouseDown = false;
@@ -32,6 +33,7 @@ async function loadUserFromURL() {
 
     // Priority 1: Permanent link token (preferred method)
     if (linkToken) {
+        currentLinkToken = linkToken; // Store for API calls
         try {
             const response = await fetch(`${API_BASE_URL}/users/by-link/${linkToken}`);
 
@@ -51,6 +53,7 @@ async function loadUserFromURL() {
     }
     // Priority 2: JWT token (temporary links)
     else if (jwtToken) {
+        currentLinkToken = jwtToken; // Store for API calls
         try {
             const payload = JSON.parse(atob(jwtToken.split('.')[1]));
             currentUserId = payload.userId;
@@ -243,7 +246,7 @@ function clearAllDates() {
 }
 
 // Submit availability
-function submitAvailability() {
+async function submitAvailability() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -251,17 +254,60 @@ function submitAvailability() {
     const monthName = `${monthNames[month]} ${year}`;
 
     // Count available days
-    const availableDays = Object.values(availabilityData).filter(v => v === true).length;
+    const availableDaysCount = Object.values(availabilityData).filter(v => v === true).length;
 
-    if (availableDays === 0) {
+    if (availableDaysCount === 0) {
         alert('⚠️ You haven\'t marked any days as available. Please select at least one date.');
         return;
     }
 
-    // In production, this would send to backend
-    saveAvailability();
+    // Convert availability data to array of day numbers
+    const availableDays = [];
+    for (const dateStr in availabilityData) {
+        if (availabilityData[dateStr] === true) {
+            const date = new Date(dateStr);
+            availableDays.push(date.getDate());
+        }
+    }
 
-    alert(`✅ Availability submitted successfully!\n\nYou marked ${availableDays} day(s) as available for ${monthName}.\n\nThe admin will review your availability and assign duties accordingly.`);
+    // Format month as YYYY-MM
+    const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    try {
+        // Send to backend API
+        if (currentLinkToken) {
+            const response = await fetch(`${API_BASE_URL}/availability?link=${currentLinkToken}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    month: monthStr,
+                    available_days: availableDays
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Failed to submit availability');
+            }
+
+            const result = await response.json();
+            console.log('Availability saved:', result);
+
+            alert(`✅ Availability submitted successfully!\n\nYou marked ${availableDaysCount} day(s) as available for ${monthName}.\n\nThe admin will review your availability and assign duties accordingly.`);
+        } else {
+            // Fallback to localStorage if no link token
+            saveAvailability();
+            alert(`✅ Availability saved locally!\n\nYou marked ${availableDaysCount} day(s) as available for ${monthName}.`);
+        }
+    } catch (error) {
+        console.error('Error submitting availability:', error);
+
+        // Fallback to localStorage on error
+        saveAvailability();
+        alert(`⚠️ Could not connect to server. Your availability has been saved locally.\n\nError: ${error.message}`);
+    }
 }
 
 // Save availability to localStorage
@@ -273,16 +319,55 @@ function saveAvailability() {
     localStorage.setItem(key, JSON.stringify(availabilityData));
 }
 
-// Load saved availability from localStorage
-function loadSavedAvailability() {
+// Load saved availability from API or localStorage
+async function loadSavedAvailability() {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    const key = `availability_${currentUserName}_${year}_${month}`;
+    const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
 
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        availabilityData = JSON.parse(saved);
-        renderCalendar();
+    try {
+        // Try to load from API if we have a link token
+        if (currentLinkToken) {
+            const response = await fetch(`${API_BASE_URL}/availability?link=${currentLinkToken}&month=${monthStr}`);
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data.availability && data.availability.available_days) {
+                    // Convert array of day numbers to our format
+                    availabilityData = {};
+                    data.availability.available_days.forEach(day => {
+                        const dateStr = formatDate(year, month, day);
+                        availabilityData[dateStr] = true;
+                    });
+
+                    console.log('Loaded availability from API:', availabilityData);
+                    renderCalendar();
+                    return;
+                }
+            } else {
+                console.log('No saved availability found on server');
+            }
+        }
+
+        // Fallback to localStorage
+        const key = `availability_${currentUserName}_${year}_${month}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            availabilityData = JSON.parse(saved);
+            console.log('Loaded availability from localStorage:', availabilityData);
+            renderCalendar();
+        }
+    } catch (error) {
+        console.error('Error loading availability:', error);
+
+        // Fallback to localStorage on error
+        const key = `availability_${currentUserName}_${year}_${month}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            availabilityData = JSON.parse(saved);
+            renderCalendar();
+        }
     }
 }
 
@@ -311,19 +396,19 @@ function attachEventListeners() {
 }
 
 // Navigate to previous month
-function previousMonth() {
-    saveAvailability(); // Save before changing month
+async function previousMonth() {
+    saveAvailability(); // Save to localStorage as backup
     currentDate.setMonth(currentDate.getMonth() - 1);
     availabilityData = {}; // Reset for new month
-    loadSavedAvailability();
-    renderCalendar();
+    renderCalendar(); // Render empty calendar first
+    await loadSavedAvailability(); // Then load data for new month
 }
 
 // Navigate to next month
-function nextMonth() {
-    saveAvailability(); // Save before changing month
+async function nextMonth() {
+    saveAvailability(); // Save to localStorage as backup
     currentDate.setMonth(currentDate.getMonth() + 1);
     availabilityData = {}; // Reset for new month
-    loadSavedAvailability();
-    renderCalendar();
+    renderCalendar(); // Render empty calendar first
+    await loadSavedAvailability(); // Then load data for new month
 }
