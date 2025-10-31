@@ -60,22 +60,60 @@ const authenticateAdmin = (req, res, next) => {
 
 /**
  * Middleware to verify unique user links (for availability form)
- * These links contain user_id in the token
+ * Supports both JWT tokens (legacy) and permanent link tokens (preferred)
  */
-const authenticateUserLink = (req, res, next) => {
+const authenticateUserLink = async (req, res, next) => {
   try {
-    // Get token from query parameter
-    const token = req.query.token;
+    // Try permanent link token first (preferred method)
+    const linkToken = req.query.link || req.headers['x-link-token'];
 
-    if (!token) {
+    if (linkToken) {
+      // Validate permanent link token via database
+      const { supabaseAdmin } = require('../config/supabase');
+
+      const { data: user, error } = await supabaseAdmin
+        .from('users')
+        .select('id, full_name, email, gender, is_active')
+        .eq('unique_link', linkToken)
+        .single();
+
+      if (error || !user) {
+        return res.status(401).json({
+          error: 'Invalid link',
+          message: 'Link not found or invalid'
+        });
+      }
+
+      if (!user.is_active) {
+        return res.status(403).json({
+          error: 'Account disabled',
+          message: 'This user account has been deactivated'
+        });
+      }
+
+      // Attach user info to request
+      req.user = {
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        gender: user.gender
+      };
+
+      return next();
+    }
+
+    // Fallback to JWT token (legacy support)
+    const jwtToken = req.query.token;
+
+    if (!jwtToken) {
       return res.status(401).json({
         error: 'Invalid link',
         message: 'No authentication token provided'
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, config.jwt.secret);
+    // Verify JWT token
+    const decoded = jwt.verify(jwtToken, config.jwt.secret);
 
     // Check if token is for user link
     if (decoded.role !== 'user') {
