@@ -177,37 +177,58 @@ router.get('/date/:date', authenticateAdmin, async (req, res) => {
  *
  * Request body:
  * {
- *   "date": "2025-01-15",
- *   "slot_number": 1,  // 1-8
- *   "user_id": "uuid",
- *   "notes": "Optional notes"
+ *   "month": "2025-10",
+ *   "day": 28,
+ *   "duty_type": "early_paat_gents_1",
+ *   "user_id": "uuid"
  * }
  */
 router.post('/', authenticateAdmin, async (req, res) => {
   try {
-    const { date, slot_number, user_id, notes } = req.body;
+    const { month, day, duty_type, user_id } = req.body;
 
     // Validate input
-    if (!date || !slot_number) {
+    if (!month || !day || !duty_type) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Date and slot_number are required'
+        message: 'Month, day, and duty_type are required'
       });
     }
 
-    if (slot_number < 1 || slot_number > 8) {
+    // Validate day range
+    if (day < 1 || day > 31) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'slot_number must be between 1 and 8'
+        message: 'Day must be between 1 and 31'
       });
     }
 
-    // Check if schedule already exists for this date/slot
+    // Validate duty_type
+    const validDutyTypes = [
+      'early_paat_gents_1',
+      'early_paat_gents_2',
+      'early_paat_ladies_1',
+      'early_paat_ladies_2',
+      'late_paat_gents_1',
+      'late_paat_gents_2',
+      'late_paat_ladies_1',
+      'late_paat_ladies_2'
+    ];
+
+    if (!validDutyTypes.includes(duty_type)) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Invalid duty_type'
+      });
+    }
+
+    // Check if schedule already exists for this month/day/duty_type
     const { data: existing, error: checkError } = await supabaseAdmin
       .from('schedules')
       .select('id')
-      .eq('date', date)
-      .eq('slot_number', slot_number)
+      .eq('month', month)
+      .eq('day', day)
+      .eq('duty_type', duty_type)
       .single();
 
     if (checkError && checkError.code !== 'PGRST116') {
@@ -223,10 +244,9 @@ router.post('/', authenticateAdmin, async (req, res) => {
     if (existing) {
       // Update existing schedule
       const updates = {
-        user_id: user_id || null,
-        updated_at: new Date().toISOString()
+        assigned_user_id: user_id || null,
+        assigned_at: new Date().toISOString()
       };
-      if (notes !== undefined) updates.notes = notes;
 
       const { data, error } = await supabaseAdmin
         .from('schedules')
@@ -249,10 +269,10 @@ router.post('/', authenticateAdmin, async (req, res) => {
       const { data, error } = await supabaseAdmin
         .from('schedules')
         .insert([{
-          date,
-          slot_number,
-          user_id: user_id || null,
-          notes: notes || null
+          month,
+          day,
+          duty_type,
+          assigned_user_id: user_id || null
         }])
         .select()
         .single();
@@ -272,8 +292,9 @@ router.post('/', authenticateAdmin, async (req, res) => {
     const { data: fullSchedule, error: detailsError } = await supabaseAdmin
       .from('schedule_details')
       .select('*')
-      .eq('date', date)
-      .eq('slot_number', slot_number)
+      .eq('month', month)
+      .eq('day', day)
+      .eq('duty_type', duty_type)
       .single();
 
     if (detailsError) {
