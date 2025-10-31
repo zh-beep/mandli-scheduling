@@ -529,12 +529,7 @@ async function saveAssignment() {
         console.log('Assignment saved:', result);
 
         // Reload schedule data for the current week to get fresh data with full names
-        await loadWeekSchedule(currentWeekStartDate);
-
-        // Re-render with fresh data
-        renderWeeklyView();
-        updateStats();
-        attachCellClickHandlers();
+        await loadAndRenderWeek();
 
         // Close modal
         closeEditModal();
