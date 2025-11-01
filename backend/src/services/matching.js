@@ -274,7 +274,230 @@ async function applySchedule(month, assignments) {
   }
 }
 
+/**
+ * Generate incremental schedule for a specific user
+ * Only fills empty slots, preserves existing assignments
+ *
+ * @param {string} month - Month in YYYY-MM format
+ * @param {string} userId - User ID who submitted availability
+ * @returns {Promise<Object>} Generated assignments for this user
+ */
+async function generateIncrementalSchedule(month, userId) {
+  try {
+    const [year, monthNum] = month.split('-').map(Number);
+    const daysInMonth = getDaysInMonth(year, monthNum);
+
+    console.log(`Generating incremental schedule for user ${userId} in ${month}`);
+
+    // Get user details and availability
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, full_name, gender')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error('User not found');
+    }
+
+    const { data: availabilityData, error: availError } = await supabaseAdmin
+      .from('availability')
+      .select('available_days')
+      .eq('user_id', userId)
+      .eq('month', month)
+      .single();
+
+    if (availError || !availabilityData) {
+      throw new Error('No availability data found for user');
+    }
+
+    const userAvailability = availabilityData.available_days || [];
+    console.log(`User ${userData.full_name} available on ${userAvailability.length} days`);
+
+    // Get existing assignments for this month
+    const { data: existingSchedules, error: schedError } = await supabaseAdmin
+      .from('schedules')
+      .select('day, duty_type, assigned_user_id')
+      .eq('month', month);
+
+    if (schedError) {
+      throw new Error('Failed to fetch existing schedules');
+    }
+
+    // Build a map of filled slots
+    const filledSlots = new Map();
+    existingSchedules.forEach(schedule => {
+      const key = `${schedule.day}-${schedule.duty_type}`;
+      filledSlots.set(key, schedule.assigned_user_id);
+    });
+
+    // Get slots that match user's gender
+    const userSlots = SLOT_CONFIG.filter(slot => slot.gender === userData.gender);
+
+    // Track how many assignments this user already has
+    const currentUserAssignments = existingSchedules.filter(s => s.assigned_user_id === userId).length;
+
+    // Find empty slots where user is available
+    const newAssignments = [];
+    const maxAssignmentsPerUser = Math.ceil((daysInMonth * userSlots.length) / 10); // Fair distribution
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      // Skip if user not available this day
+      if (!userAvailability.includes(day)) continue;
+
+      // Check if user already has enough assignments
+      if (currentUserAssignments + newAssignments.length >= maxAssignmentsPerUser) {
+        console.log(`User has reached max assignments (${maxAssignmentsPerUser})`);
+        break;
+      }
+
+      // Check if user is already assigned on this day
+      const userAlreadyAssignedToday = existingSchedules.some(s =>
+        s.day === day && s.assigned_user_id === userId
+      );
+
+      if (userAlreadyAssignedToday) continue;
+
+      // Try to assign to an empty slot
+      for (const slot of userSlots) {
+        const slotKey = `${day}-${slot.duty_type}`;
+
+        if (!filledSlots.has(slotKey)) {
+          // Slot is empty, assign user
+          newAssignments.push({
+            month,
+            day,
+            duty_type: slot.duty_type,
+            assigned_user_id: userId
+          });
+
+          // Mark slot as filled
+          filledSlots.set(slotKey, userId);
+
+          // Only one assignment per day per user
+          break;
+        }
+      }
+    }
+
+    console.log(`Generated ${newAssignments.length} new assignments for ${userData.full_name}`);
+
+    return {
+      success: true,
+      user: userData,
+      newAssignments,
+      stats: {
+        availableDays: userAvailability.length,
+        assignedSlots: newAssignments.length,
+        existingAssignments: currentUserAssignments
+      }
+    };
+
+  } catch (error) {
+    console.error('Error generating incremental schedule:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Apply incremental assignments (only adds, doesn't delete)
+ *
+ * @param {Array} assignments - New assignments to add
+ * @returns {Promise<Object>} Result of application
+ */
+async function applyIncrementalSchedule(assignments) {
+  try {
+    if (!assignments || assignments.length === 0) {
+      return {
+        success: true,
+        message: 'No new assignments to apply',
+        assignmentsCreated: 0
+      };
+    }
+
+    console.log(`Applying ${assignments.length} incremental assignments...`);
+
+    // Insert new assignments (without deleting existing ones)
+    const { data, error: insertError } = await supabaseAdmin
+      .from('schedules')
+      .insert(assignments);
+
+    if (insertError) {
+      throw new Error(`Failed to insert schedules: ${insertError.message}`);
+    }
+
+    return {
+      success: true,
+      message: `Added ${assignments.length} new assignments`,
+      assignmentsCreated: assignments.length
+    };
+
+  } catch (error) {
+    console.error('Error applying incremental schedule:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Remove all assignments for a deleted user and regenerate schedule
+ *
+ * @param {string} userId - User ID being deleted
+ * @param {string} month - Month to regenerate
+ * @returns {Promise<Object>} Result of regeneration
+ */
+async function handleUserDeletion(userId, month) {
+  try {
+    console.log(`Handling deletion of user ${userId} for month ${month}`);
+
+    // Remove user's assignments
+    const { error: deleteError } = await supabaseAdmin
+      .from('schedules')
+      .delete()
+      .eq('assigned_user_id', userId)
+      .eq('month', month);
+
+    if (deleteError) {
+      throw new Error(`Failed to remove user assignments: ${deleteError.message}`);
+    }
+
+    console.log(`Removed assignments for user ${userId}`);
+
+    // Now regenerate the entire schedule
+    const schedule = await generateMonthlySchedule(month);
+
+    if (schedule.success && schedule.assignments.length > 0) {
+      const applied = await applySchedule(month, schedule.assignments);
+      return {
+        success: true,
+        message: 'User removed and schedule regenerated',
+        ...applied
+      };
+    }
+
+    return {
+      success: false,
+      error: 'Failed to regenerate schedule after user removal'
+    };
+
+  } catch (error) {
+    console.error('Error handling user deletion:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 module.exports = {
   generateMonthlySchedule,
-  applySchedule
+  applySchedule,
+  generateIncrementalSchedule,
+  applyIncrementalSchedule,
+  handleUserDeletion
 };

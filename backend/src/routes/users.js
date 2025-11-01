@@ -4,6 +4,7 @@ const { nanoid } = require('nanoid');
 const { supabaseAdmin } = require('../config/supabase');
 const { authenticateAdmin } = require('../middleware/auth');
 const config = require('../config');
+const { handleUserDeletion } = require('../services/matching');
 
 const router = express.Router();
 
@@ -184,14 +185,18 @@ router.put('/:id', authenticateAdmin, async (req, res) => {
 
 /**
  * DELETE /api/users/:id
- * Delete a user
+ * Delete a user and regenerate schedules
  * Requires admin authentication
  */
 router.delete('/:id', authenticateAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Delete user
+    // Get current month for schedule regeneration
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+    // Delete user (cascade will handle related records)
     const { error } = await supabaseAdmin
       .from('users')
       .delete()
@@ -205,8 +210,22 @@ router.delete('/:id', authenticateAdmin, async (req, res) => {
       });
     }
 
+    // Regenerate schedule for current month after user deletion
+    console.log(`User ${id} deleted, regenerating schedule for ${currentMonth}`);
+    try {
+      const regenerationResult = await handleUserDeletion(id, currentMonth);
+      if (regenerationResult.success) {
+        console.log('Schedule regenerated successfully after user deletion');
+      } else {
+        console.error('Failed to regenerate schedule:', regenerationResult.error);
+      }
+    } catch (scheduleError) {
+      console.error('Error regenerating schedule:', scheduleError);
+      // Don't fail the delete operation if schedule regeneration fails
+    }
+
     res.json({
-      message: 'User deleted successfully',
+      message: 'User deleted successfully and schedule updated',
       id
     });
 

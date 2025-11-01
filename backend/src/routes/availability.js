@@ -1,7 +1,12 @@
 const express = require('express');
 const { supabaseClient, supabaseAdmin } = require('../config/supabase');
 const { authenticateUserLink, authenticateAdmin } = require('../middleware/auth');
-const { generateMonthlySchedule, applySchedule } = require('../services/matching');
+const {
+  generateMonthlySchedule,
+  applySchedule,
+  generateIncrementalSchedule,
+  applyIncrementalSchedule
+} = require('../services/matching');
 
 const router = express.Router();
 
@@ -224,15 +229,43 @@ router.post('/', async (req, res) => {
       result = data;
     }
 
-    // Automatically run scheduling algorithm after saving availability
-    console.log(`Running scheduling algorithm for month ${month}...`);
+    // Check if there are existing schedules for this month
+    const { data: existingSchedules, error: checkError } = await supabaseAdmin
+      .from('schedules')
+      .select('id')
+      .eq('month', month)
+      .limit(1);
+
+    if (checkError) {
+      console.error('Error checking existing schedules:', checkError);
+    }
+
+    // Decide whether to use incremental or full scheduling
+    const hasExistingSchedule = existingSchedules && existingSchedules.length > 0;
+
+    console.log(`Running ${hasExistingSchedule ? 'incremental' : 'full'} scheduling for month ${month}...`);
+
     try {
-      const schedule = await generateMonthlySchedule(month);
-      if (schedule.success && schedule.assignments.length > 0) {
-        const applied = await applySchedule(month, schedule.assignments);
-        console.log(`Schedule generated and applied: ${schedule.assignments.length} assignments created`);
+      if (hasExistingSchedule) {
+        // Use incremental scheduling - only fill empty slots for this user
+        const incremental = await generateIncrementalSchedule(month, userId);
+
+        if (incremental.success && incremental.newAssignments.length > 0) {
+          const applied = await applyIncrementalSchedule(incremental.newAssignments);
+          console.log(`Incremental schedule applied for ${incremental.user.full_name}: ${incremental.newAssignments.length} new assignments`);
+        } else {
+          console.log(`No new assignments for ${incremental.user?.full_name || userId} - all slots filled or no availability`);
+        }
       } else {
-        console.log('No assignments generated - insufficient availability or users');
+        // First submission for this month - run full scheduling
+        const schedule = await generateMonthlySchedule(month);
+
+        if (schedule.success && schedule.assignments.length > 0) {
+          const applied = await applySchedule(month, schedule.assignments);
+          console.log(`Full schedule generated and applied: ${schedule.assignments.length} assignments created`);
+        } else {
+          console.log('No assignments generated - insufficient availability or users');
+        }
       }
     } catch (scheduleError) {
       console.error('Error running scheduling algorithm:', scheduleError);

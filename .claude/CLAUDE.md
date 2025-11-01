@@ -110,26 +110,53 @@ npm start  # Starts server on port 3000, opens browser
 npm run dev  # Starts server without auto-open
 ```
 
-### Deployment
+### Deployment Process (CRITICAL - READ THIS)
 
-#### Frontend (Vercel)
+#### 🏗️ Architecture
+- **Single GitHub Repository**: `zh-beep/mandli-scheduling`
+- **Frontend Files**: Root directory (`*.html`, `*.css`, `*.js`)
+- **Backend Files**: `/backend` folder (Node.js API)
+
+#### 🎨 Frontend (Vercel) - Auto-Deploy ✅
 - **URL**: https://mandli-scheduling.vercel.app
 - **Auto-deploy**: Connected to GitHub repo `zh-beep/mandli-scheduling`
 - **Trigger**: Automatic deployment on push to `main` branch
-- **No manual deployment needed** - just push to GitHub
+- **Deploys**: Only root files (ignores `/backend` folder)
+```bash
+# Frontend deployment (automatic)
+git add .
+git commit -m "feat: Frontend changes"
+git push origin main
+# Vercel deploys in 1-2 minutes
+```
 
-#### Backend (Railway)
-- **URL**: https://mandli-backend.railway.app (or similar)
-- **Deployment Method**: Railway CLI (NOT GitHub auto-deploy)
-- **Manual deployment required**:
-  ```bash
-  cd backend
-  railway up
-  ```
-- **Project**: mandli (production environment)
-- Railway CLI is installed at `/opt/homebrew/bin/railway`
+#### 🔧 Backend (Railway) - Manual Deploy ⚠️
+- **URL**: https://mandli-production.up.railway.app
+- **Method**: Railway CLI **ONLY** (NO auto-deploy)
+- **Location**: `/opt/homebrew/bin/railway`
+```bash
+# Backend deployment (manual)
+cd backend
+railway up  # Deploy when YOU decide
+```
 
-**Important**: Backend does NOT auto-deploy from GitHub. Always use `railway up` after pushing backend changes.
+**⚠️ DEPLOYMENT RULES:**
+1. Backend NEVER auto-deploys
+2. Test backend locally BEFORE `railway up`
+3. Frontend = deploy anytime (safe)
+4. Backend = deploy carefully (can break app)
+
+#### 📋 Workflow
+```bash
+# Daily workflow
+git add .
+git commit -m "changes"
+git push              # Frontend auto-deploys
+
+# When backend is ready
+cd backend
+railway up           # Manual backend deploy
+```
 
 ### Client Demo Points
 1. **Visual Appeal**: Professional design with gradient header and color coding

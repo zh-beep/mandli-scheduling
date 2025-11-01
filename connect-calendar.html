@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Calendar - Mandli Scheduler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+            border-radius: 8px;
+        }
+
+        .info-box h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .info-box ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-box li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #555;
+        }
+
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .auth-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-button:active {
+            transform: translateY(0);
+        }
+
+        .auth-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .security-note {
+            font-size: 12px;
+            color: #888;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .google-logo {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="google-logo">📅</div>
+        <h1>Connect Your Google Calendar</h1>
+        <p class="subtitle">Get duty schedule automatically added to your calendar</p>
+
+        <div class="info-box">
+            <h3>What you'll get:</h3>
+            <ul>
+                <li>Automatic calendar events for your assigned duties</li>
+                <li>Email and popup reminders before shifts</li>
+                <li>Seamless schedule synchronization</li>
+                <li>No manual entry needed</li>
+            </ul>
+        </div>
+
+        <form id="connectForm" onsubmit="startAuth(event)">
+            <div class="form-group">
+                <label for="emailInput">Your Email Address</label>
+                <input
+                    type="email"
+                    id="emailInput"
+                    name="email"
+                    placeholder="yourname@example.com"
+                    required
+                    autocomplete="email"
+                >
+            </div>
+
+            <button type="submit" class="auth-button" id="submitButton">
+                Connect Google Calendar
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Connecting to Google Calendar...</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="security-note">
+            🔒 Secure OAuth 2.0 authentication. We only access your calendar to add events.
+            You can revoke access anytime from your Google Account settings.
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = window.location.hostname.includes('vercel.app') || window.location.hostname.includes('mandli')
+            ? 'https://mandli-production.up.railway.app/api'
+            : 'http://localhost:3001/api';
+
+        async function startAuth(event) {
+            event.preventDefault();
+
+            const emailInput = document.getElementById('emailInput');
+            const loadingEl = document.getElementById('loading');
+            const errorEl = document.getElementById('error');
+            const button = document.getElementById('submitButton');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                errorEl.textContent = 'Please enter your email address';
+                errorEl.classList.add('active');
+                return;
+            }
+
+            // Show loading
+            loadingEl.classList.add('active');
+            errorEl.classList.remove('active');
+            button.disabled = true;
+
+            try {
+                // Call the API to get OAuth URL
+                const response = await fetch(`${API_BASE_URL}/calendar/connect-by-email`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.authUrl) {
+                    // Redirect to Google OAuth
+                    console.log('Redirecting to:', data.authUrl);
+                    window.location.href = data.authUrl;
+                } else {
+                    throw new Error(data.message || 'Failed to generate authentication link');
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                errorEl.textContent = `Error: ${error.message}. Please try again or contact support.`;
+                errorEl.classList.add('active');
+                loadingEl.classList.remove('active');
+                button.disabled = false;
+            }
+        }
+
+        // Pre-fill email from URL parameter if provided
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailParam = urlParams.get('email');
+            if (emailParam) {
+                document.getElementById('emailInput').value = emailParam;
+            }
+        });
+    </script>
+</body>
+</html>
