@@ -46,7 +46,7 @@ async function clearTestMonth() {
   try {
     // Get and delete all schedules for test month
     const { data: schedules } = await axios.get(
-      `${API_URL}/api/schedule/month/${TEST_MONTH}`,
+      `${API_URL}/api/schedules/month/${TEST_MONTH}`,
       {
         headers: { Authorization: `Bearer ${adminToken}` }
       }
@@ -55,7 +55,7 @@ async function clearTestMonth() {
     if (schedules.length > 0) {
       for (const schedule of schedules) {
         await axios.delete(
-          `${API_URL}/api/schedule/${schedule.id}`,
+          `${API_URL}/api/schedules/${schedule.id}`,
           {
             headers: { Authorization: `Bearer ${adminToken}` }
           }
@@ -135,7 +135,7 @@ async function submitAvailability(user, availableDays) {
         available_days: availableDays
       },
       {
-        headers: { 'X-User-Link': user.unique_link }
+        headers: { 'x-link-token': user.unique_link }
       }
     );
 
@@ -153,7 +153,7 @@ async function submitAvailability(user, availableDays) {
 async function getSchedule() {
   try {
     const response = await axios.get(
-      `${API_URL}/api/schedule/month/${TEST_MONTH}`,
+      `${API_URL}/api/schedules/month/${TEST_MONTH}`,
       {
         headers: { Authorization: `Bearer ${adminToken}` }
       }

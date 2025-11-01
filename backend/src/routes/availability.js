@@ -230,14 +230,14 @@ router.post('/', async (req, res) => {
     }
 
     // Check if there are existing schedules for this month
-    const { data: existingSchedules, error: checkError } = await supabaseAdmin
+    const { data: existingSchedules, error: schedCheckError } = await supabaseAdmin
       .from('schedules')
       .select('id')
       .eq('month', month)
       .limit(1);
 
-    if (checkError) {
-      console.error('Error checking existing schedules:', checkError);
+    if (schedCheckError) {
+      console.error('Error checking existing schedules:', schedCheckError);
     }
 
     // Decide whether to use incremental or full scheduling
